@@ -1,5 +1,11 @@
+#===================================================================================================
+#   Module name:    ipdns.py
+#   Author:         Zachary Colbert zcolbert1993@gmail.com
+#   Date:           11-26-2017
+#   Purpose:        Tools for resolving a domain name's IP address,
+#                   and checking the domain or IP against an email blacklist.
+#===================================================================================================
 import socket
-
 
 def resolve_ip(domain_name):
     """Resolve IPV4 address from domain name"""

@@ -13,8 +13,8 @@ REPORT_FILE = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-
 def lookup_domains():
     """Check each domain against the IP blacklist,
     and Domain Blacklist. Return an array of ListedDomains"""
-    bl = "zen.spamhaus.org"
-    dbl = "dbl.spamhaus.org"
+    bl = "zen.spamhaus.org"     # IP Blacklist
+    dbl = "dbl.spamhaus.org"    # Domain Blacklist
 
     listed_domains = []
 
@@ -23,11 +23,13 @@ def lookup_domains():
         ip = ipdns.resolve_ip(domain)
         if ip is None: continue  # skip this domain
 
+        # Check against IP blacklist
         ip_status = ipdns.bl_lookup_by_ip(ip, bl)
         if ip_status is not None:
             temp_domain = ListedDomain(domain, ip, bl, "IP Address")
             listed_domains.append(temp_domain)
 
+        # Check against Domain blacklist
         dns_status = ipdns.dbl_lookup(domain, dbl)
         if dns_status is not None:
             temp_domain = ListedDomain(domain, ip, dbl, "Domain")
