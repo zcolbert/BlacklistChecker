@@ -59,8 +59,7 @@ class MessageTemplate:
 
     def write_table_header(self):
         """Write the opening tags for an HTML table"""
-        self.file_stream.write("\t\t<table border=\"1\" width=\"100%\" \
-                                cellpadding=\"2\" cellspacing=\"2\">\n")
+        self.file_stream.write("\t\t<table border=\"1\" width=\"100%\" cellpadding=\"2\" cellspacing=\"2\">\n")
         self.file_stream.write("\t\t\t<tbody>\n")
         # Write the contents of the header row
         self.file_stream.write("\t\t\t\t<tr>\n")

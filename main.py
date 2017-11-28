@@ -11,31 +11,58 @@ REPORT_FILE = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-
 
 
 def lookup_domains():
-    """Check each domain against the IP blacklist,
-    and Domain Blacklist. Return an array of ListedDomains"""
-    bl = "zen.spamhaus.org"     # IP Blacklist
-    dbl = "dbl.spamhaus.org"    # Domain Blacklist
+    """Check each domain against the IP blacklist, and Domain Blacklist.
+    The IP lookup will return a result if the IP or Domain is listed."""
+
+    #bl = "zen.spamhaus.org"     # IP Blacklist
+    #dbl = "dbl.spamhaus.org"    # Domain Blacklist
+
+    ip_blacklists = ["zen.spamhaus.org",
+                     "bl.spameatingmonkey.net"
+                     ]
+
+    domain_blacklists = ["dbl.spamhaus.org",
+                         "fresh.spameatingmonkey.net"
+                         "fresh10.spameatingmonkey.net",
+                         "fresh15.spameatingmonkey.net",
+                         "fresh30.spameatingmonkey.net",
+                         ]
 
     listed_domains = []
+    inactive_domains = []
 
     for domain in domains:
         print("Checking", domain, "...")
         ip = ipdns.resolve_ip(domain)
-        if ip is None: continue  # skip this domain
+        if ip is None:
+            inactive_domains.append(domain)
+            continue  # skip this domain
 
-        # Check against IP blacklist
-        ip_status = ipdns.bl_lookup_by_ip(ip, bl)
-        if ip_status is not None:
-            temp_domain = ListedDomain(domain, ip, bl, "IP Address")
-            listed_domains.append(temp_domain)
+        # Check against IP blacklists
+        for bl in ip_blacklists:
+            ip_status = ipdns.bl_lookup_by_ip(ip, bl)
+            if ip_status is not None:  # IP is listed
+                temp_domain = ListedDomain(domain, ip, bl, "IP Address")
+                listed_domains.append(temp_domain)
 
         # Check against Domain blacklist
-        dns_status = ipdns.dbl_lookup(domain, dbl)
-        if dns_status is not None:
-            temp_domain = ListedDomain(domain, ip, dbl, "Domain")
-            listed_domains.append(temp_domain)
+        for dbl in domain_blacklists:
+            dns_status = ipdns.dbl_lookup(domain, dbl)
+            if dns_status is not None:  # Domain is listed
+                temp_domain = ListedDomain(domain, ip, dbl, "Domain")
+                listed_domains.append(temp_domain)
+
+    # Create a log file of potentially inactive domains
+    log_inactive_domains(inactive_domains)
 
     return listed_domains
+
+
+def log_inactive_domains(inactive_domains):
+    domain_file = "files/inactive_domains.txt"
+    with open(domain_file, 'w') as file:
+        for domain in inactive_domains:
+            file.write(domain + "\n")
 
 
 def generate_report(listed_domains, report_file):

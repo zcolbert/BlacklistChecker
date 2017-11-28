@@ -7,6 +7,7 @@
 #===================================================================================================
 import socket
 
+
 def resolve_ip(domain_name):
     """Resolve IPV4 address from domain name"""
     try:
@@ -21,7 +22,8 @@ def reverse_ip(ip_address):
 
 
 def bl_lookup_by_ip(ip_address, blacklist):
-    """Check ip_address against an IP blacklist"""
+    """Check ip_address against an IP blacklist.
+    Query is in the form of: reversed_ip.target.blacklist.com"""
     return resolve_ip(reverse_ip(ip_address) + '.' + blacklist)
 
 
@@ -31,5 +33,6 @@ def bl_lookup_by_domain(domain, blacklist):
 
 
 def dbl_lookup(target_domain, domain_blacklist):
-    """Check target_domain against domain_blacklist"""
+    """Check target_domain against domain_blacklist.
+    Query is in the form os: target_domain.domain_blacklist.com"""
     return resolve_ip(target_domain + '.' + domain_blacklist)
