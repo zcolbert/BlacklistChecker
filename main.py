@@ -3,39 +3,47 @@
 import csv
 import datetime
 import ipdns
-from domains import domains, ListedDomain
+from domains import DomainRecord, ListedDomain
 from mailer import SSLMailer, MessageTemplate
+from blacklists import ip_blacklists, domain_blacklists
 
 MSG_TEMPLATE = "files/email_template.txt"
+DOMAIN_FILE = "C:\\Users\\Zachary\\Documents\\IBW\\Accounts\\domains.csv"
 REPORT_FILE = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-%Y")
 
+def load_domain_list():
+    domains = []
+    with open(DOMAIN_FILE, 'r') as file:
+        reader = csv.DictReader(file, dialect='excel')
 
-def lookup_domains():
-    """Check each domain against the IP blacklist, and Domain Blacklist.
-    The IP lookup will return a result if the IP or Domain is listed."""
+        for row in reader:
+            if row["Domain"] != "" and row["Status"] == "Active":
+                temp_row = DomainRecord()
+                temp_row.name = row["Domain"]
+                temp_row.role = row["Role"]
+                temp_row.master = row["Master"]
+                temp_row.account = row["IBW Account Name"]
+                temp_row.acct_id = row["IBW Account ID"]
 
-    #bl = "zen.spamhaus.org"     # IP Blacklist
-    #dbl = "dbl.spamhaus.org"    # Domain Blacklist
+                domains.append(temp_row)
 
-    ip_blacklists = ["zen.spamhaus.org",
-                     "bl.spameatingmonkey.net"
-                     ]
+    return domains
 
-    domain_blacklists = ["dbl.spamhaus.org",
-                         "fresh.spameatingmonkey.net"
-                         "fresh10.spameatingmonkey.net",
-                         "fresh15.spameatingmonkey.net",
-                         "fresh30.spameatingmonkey.net",
-                         ]
+
+def lookup_domains(domain_list):
+    """Check each domain against the IP Blacklists and Domain Blacklists.
+    The IP lookup will return a result if the IP or Domain is listed.
+    Otherwise, the lookup will return None"""
 
     listed_domains = []
     inactive_domains = []
 
-    for domain in domains:
-        print("Checking", domain, "...")
-        ip = ipdns.resolve_ip(domain)
+    for domain in domain_list:
+        print("Checking", domain.name, "...")
+        ip = ipdns.resolve_ip(domain.name)
+
         if ip is None:
-            inactive_domains.append(domain)
+            inactive_domains.append(domain.name)
             continue  # skip this domain
 
         # Check against IP blacklists
@@ -47,7 +55,7 @@ def lookup_domains():
 
         # Check against Domain blacklist
         for dbl in domain_blacklists:
-            dns_status = ipdns.dbl_lookup(domain, dbl)
+            dns_status = ipdns.dbl_lookup(domain.name, dbl)
             if dns_status is not None:  # Domain is listed
                 temp_domain = ListedDomain(domain, ip, dbl, "Domain")
                 listed_domains.append(temp_domain)
@@ -70,13 +78,17 @@ def generate_report(listed_domains, report_file):
     information about each listed domain"""
     with open(report_file, 'w', newline="") as report:
         writer = csv.writer(report, dialect='excel')
-        writer.writerow(["Domain Name", "IP Address", "Listed On", "List Type"])
+        writer.writerow(["Account", "ID", "Domain Name", "IP Address",
+                         "Listed On", "List Type", "Previously Blacklisted"])
 
         for domain in listed_domains:
-            writer.writerow([domain.domain_name,
+            writer.writerow([domain.account,
+                             domain.acct_id,
+                             domain.name,
                              domain.ip_address,
                              domain.list_name,
-                             domain.list_type])
+                             domain.list_type,
+                             domain.prev_listed])
 
 
 def generate_email_template(listed_domains, template_file):
@@ -88,25 +100,37 @@ def generate_email_template(listed_domains, template_file):
         msg.generate_template_header()
         # Write the rows for each listed domain
         for domain in listed_domains:
-            msg.write_table_row(domain.domain_name,
-                                domain.ip_address,
-                                domain.list_name,
-                                domain.list_type)
+            fields = [domain.acct_id,
+                      domain.name,
+                      domain.ip_address,
+                      domain.list_name,
+                      domain.list_type]
+
+            msg.write_table_row(fields)
+
         msg.generate_template_footer()
 
 
 def send_report_email(recipient, message_template):
     """Send the report email to the recipient"""
-    mailer = SSLMailer("shinari.websitewelcome.com", 465,
-                       "support@myzensend.com", "Paso93447",
-                        message_template)
-    mailer.send(recipient)
+    print("Sending report email ...")
+    try:
+        mailer = SSLMailer("shinari.websitewelcome.com", 465,
+                           "support@myzensend.com", "Paso93447",
+                           message_template)
+        mailer.send(recipient)
+        print("Email sent successfully")
+    except:
+        print("Sending failed")
+        with open("email_error.txt", 'a') as logfile:
+            logfile.write("%s\t%s\t\n" % ("Sending failed", datetime.date.today().strftime("%m-%d-%Y")))
 
 
 def main():
-
+    domains = load_domain_list()
     # Check each of the domains against the BL and DBL
-    listed_domains = lookup_domains()  # Contains ListedDomain objects
+    listed_domains = lookup_domains(domains)  # Contains ListedDomain objects
+    generate_report(listed_domains, REPORT_FILE)
     generate_email_template(listed_domains, MSG_TEMPLATE)
     send_report_email("support@myzensend.com", MSG_TEMPLATE)
 

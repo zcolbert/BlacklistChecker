@@ -1,95 +1,31 @@
-domains = [
-    "osseodent-news.net",
-    "fordkeychain.net",
-    "getuplink.net",
-    "join-financeagents.com",
-    "patientcreditprograms.net",
-    "customizeddfs.net",
-    "financialconcepts4u.net",
-    "cardealerppc.net",
-    "florida-realestate-news.com",
-    "florida-realestatenews.us",
-    "floridarealestatenews.us",
-    "pioneer-solutions.net",
-    "healthinsurancemarketing.net",
-    "retentionthroughrewards.com",
-    "mbancpartners.com",
-    "mbanc-partners.com",
-    "benefits-now.net",
-    "plgates.net",
-    "hirenurses.net",
-    "nursecontinuinged.net",
-    "swmailer.net",
-    "commissions-and-leads.net",
-    "southbayimplant.net",
-    "ozzyloancloser.com",
-    "nad-brokerage.biz",
-    "nadbrokerage.biz",
-    "brokerage-services.net",
-    "professional-sales-intern.net",
-    "petdatalifecard.com",
-    "automotivecampaigns.us",
-    "authentic-services.com",
-    "benefitresourcecenter.net",
-    "cainsurancebrokers.net",
-    "carsquickbuy.net",
-    "patientfinanceprograms.com",
-    "germedusainstruments.com",
-    "newsolutioncampaigns.net",
-    "media272specials.net",
-    "pmsfl-leads.com",
-    "orlandoownership.net",
-    "ntslogistics-dealers.com",
-    "sell10morecars.net",
-    "preconstructioncommission.com",
-    "spgpstracker.net",
-    "selectsenior.net",
-    "captive-insuranceinfo.info",
-    "captiveinsuranceinfo.info",
-    "novus-bonds.com",
-    "vmartecplusmail.net",
-    "homeonthephone.info",
-    "agent-resources.net",
-    "affordable-benefits.net",
-    "bright-star-dental.com",
-    "brightstar-dental.net",
-    "neoautofiance.com",
-    "the-bkpro.net",
-    "asr-insurance.com",
-    "justfixers.info",
-    "insurance-recruiting.com",
-    "buildrebate.com",
-    "i-car-xl.com",
-    "adlersocial.us",
-    "carsgottago.us",
-    "dealerstaffing.net",
-    "1-valuations.com",
-    "loan-hack.com",
-    "irstaxresolution.net",
-    "hr-resource.info",
-    "ffltristatehiring.com",
-    "acre-email.net",
-    "smart-dealers.com",
-    "savemoneyat.net",
-    "kingdomgroup.biz",
-    "micoley.net",
-    "vantage-recruiter.com",
-    "thelowestcosthealthinsurance.com",
-    "awmjobs.com",
-    "healthcarefinancialsummit.org",
-    "healthcarefinancial-summit.org",
-    "agencyoffer.net",
-    "thelistingsolution.com",
-    "revirtualtourservice.com",
-    "socialspotlighter.net"
-]
 
+class DomainRecord:
+    def __init__(self):
+        self.name = ""
+        self.role = ""
+        self.master = ""
+        self.account = ""
+        self.acct_id = ""
+        self.prev_listed = ""
 
-class ListedDomain:
+class ListedDomain(DomainRecord):
     """Represents a domain name that has been listed on an
     IP Address or Domain based email blacklist"""
-    def __init__(self, domain_name, ip_address, list_name, list_type):
-        self.domain_name = domain_name
+    def __init__(self, parent, ip_address, list_name, list_type):
+        DomainRecord.__init__(self)
+        self.name = parent.name
+        self.role = parent.role
+        self.master = parent.master
+        self.account = parent.account
+        self.acct_id = parent.acct_id
+        self.prev_listed = parent.prev_listed
+
         self.ip_address = ip_address
         self.list_name = list_name
         self.list_type = list_type
+
+
+
+
+
+

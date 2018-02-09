@@ -10,6 +10,8 @@ import socket
 
 def resolve_ip(domain_name):
     """Resolve IPV4 address from domain name"""
+    #TODO remove whitespace, otherwise it won't resolve
+    # Ex.: "blueequinoxconsulting.com	"
     try:
         return socket.gethostbyname(domain_name)
     except socket.gaierror:
