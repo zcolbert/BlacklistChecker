@@ -1,4 +1,4 @@
-#!python3
+#! python3
 
 import csv
 import datetime
@@ -6,10 +6,14 @@ import ipdns
 from domains import DomainRecord, ListedDomain
 from mailer import SSLMailer, MessageTemplate
 from blacklists import ip_blacklists, domain_blacklists
+from configparser import ConfigParser
 
+
+CONFIG_FILE = "config.ini"
 MSG_TEMPLATE = "files/email_template.txt"
 DOMAIN_FILE = "C:\\Users\\Zachary\\Documents\\IBW\\Accounts\\domains.csv"
 REPORT_FILE = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-%Y")
+
 
 def load_domain_list():
     domains = []
@@ -113,17 +117,24 @@ def generate_email_template(listed_domains, template_file):
 
 def send_report_email(recipient, message_template):
     """Send the report email to the recipient"""
+    cfg = ConfigParser()
+    cfg.read(CONFIG_FILE)
+
     print("Sending report email ...")
     try:
-        mailer = SSLMailer("shinari.websitewelcome.com", 465,
-                           "support@myzensend.com", "Paso93447",
+        mailer = SSLMailer(cfg.get("EMAIL_OPTIONS", "SmtpServer"),
+                           cfg.get("EMAIL_OPTIONS", "SSLPort"),
+                           cfg.get("EMAIL_OPTIONS", "UserName"),
+                           cfg.get("EMAIL_OPTIONS", "SmtpPasswd"),
                            message_template)
         mailer.send(recipient)
         print("Email sent successfully")
     except:
         print("Sending failed")
         with open("email_error.txt", 'a') as logfile:
-            logfile.write("%s\t%s\t\n" % ("Sending failed", datetime.date.today().strftime("%m-%d-%Y")))
+            logfile.write("%s\t%s\t\n"
+                          % ("Sending failed",
+                             datetime.date.today().strftime("%m-%d-%Y")))
 
 
 def main():

@@ -1,16 +1,15 @@
-#===================================================================================================
+# ===================================================================================================
 #   Module name:    mailer.py
 #   Author:         Zachary Colbert zcolbert1993@gmail.com
 #   Date:           11-26-2017
 #   Purpose:        Generate email message templates, and send a message
 #                   via SSL based email server.
-#===================================================================================================
+# ===================================================================================================
 
 import datetime
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
 
 class SSLMailer:
     """Send a message via SSL based email server"""
@@ -18,6 +17,7 @@ class SSLMailer:
         self.message_template = message_template  # Contains message body
         self.server = smtplib.SMTP_SSL(server, port)
         self.server.login(username, password)
+        self.from_name = username
         self.msg = MIMEMultipart()
         self.initialize_message_header()
         self.read_template()
@@ -26,7 +26,7 @@ class SSLMailer:
         """Initialize the email message header content."""
         today = datetime.date.today().strftime("%m-%d-%Y")
         self.msg["Subject"] = "Blacklist Report " + today
-        self.msg["From"] = "support@myzensend.com"
+        self.msg["From"] = self.from_name
         self.msg.preamble = "Blacklist Report " + today
 
     def read_template(self):
@@ -98,11 +98,3 @@ class MessageTemplate:
         self.write_table_footer()
         self.file_stream.write("\t\t<br><p>Report generated: " + dt + "</p>\n")
         self.write_html_footer()
-
-
-def test():
-    test_mailer = SSLMailer("shinari.websitewelcome.com", 465,
-                            "support@myzensend.com", "Paso93447",
-                            "files/email_template.txt")
-    print(test_mailer.msg)
-    test_mailer.send("zac@inboxwired.com")
