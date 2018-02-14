@@ -16,6 +16,8 @@ REPORT_FILE = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-
 
 
 def load_domain_list():
+    """Load the list of active customer domains
+    into an array of DomainRecord objects."""
     domains = []
     with open(DOMAIN_FILE, 'r') as file:
         reader = csv.DictReader(file, dialect='excel')
@@ -57,7 +59,7 @@ def lookup_domains(domain_list):
                 temp_domain = ListedDomain(domain, ip, bl, "IP Address")
                 listed_domains.append(temp_domain)
 
-        # Check against Domain blacklist
+        # Check against Domain blacklists
         for dbl in domain_blacklists:
             dns_status = ipdns.dbl_lookup(domain.name, dbl)
             if dns_status is not None:  # Domain is listed
