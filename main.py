@@ -1,5 +1,6 @@
 #! python3
 
+import os
 import csv
 import datetime
 import ipdns
@@ -34,15 +35,17 @@ def load_domain_list():
 
     return domains
 
+
 def get_blacklists(bl_file):
+    """Return array of blacklist domains read from bl_file."""
     dbl_lists = []
-    print("Opening", bl_file, "...")
-    with open(bl_file, 'r', newline='') as file:
+    with open(bl_file, 'r') as file:
         for line in file:
             if ipdns.valid_domain(line.strip()):
                 dbl_lists.append(line.strip())
 
     return dbl_lists
+
 
 def lookup_domains(domain_list):
     """Check each domain against the IP Blacklists and Domain Blacklists.
@@ -92,9 +95,15 @@ def log_inactive_domains(inactive_domains):
             file.write(domain + "\n")
 
 
-def generate_report(listed_domains, report_file):
+def generate_report(listed_domains):
     """Create a CSV report containing
     information about each listed domain"""
+    cfg = ConfigParser()
+    cfg.read(CONFIG_FILE)
+
+    filename = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-%Y")
+    report_file = os.path.join(cfg.get("FILES", "ReportSaveLocation"), filename)
+
     with open(report_file, 'w', newline="") as report:
         writer = csv.writer(report, dialect='excel')
         writer.writerow(["Account", "ID", "Domain Name", "IP Address",
@@ -156,7 +165,7 @@ def main():
     domains = load_domain_list()
     # Check each of the domains against the BL and DBL
     listed_domains = lookup_domains(domains)  # Contains ListedDomain objects
-    generate_report(listed_domains, REPORT_FILE)
+    generate_report(listed_domains)
     generate_email_template(listed_domains, MSG_TEMPLATE)
     #send_report_email("support@myzensend.com", MSG_TEMPLATE)
 

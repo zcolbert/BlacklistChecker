@@ -1,19 +1,11 @@
 #! python3
 
+from main import get_blacklists
 from ipdns import valid_domain
 
 DBL_LIST_FILE = "../files/domain_blacklists.txt"
 IP_LIST_FILE = "../files/ip_blacklists.txt"
 
-def get_blacklists(bl_file):
-    dbl_lists = []
-    print("Opening", bl_file, "...")
-    with open(bl_file, 'r', newline='') as file:
-        for line in file:
-            if valid_domain(line.strip()):
-                dbl_lists.append(line.strip())
-
-    return dbl_lists
 
 def test():
     print("Getting domain blacklists ...")
