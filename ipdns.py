@@ -8,6 +8,23 @@
 import socket
 
 
+def valid_tld(tld):
+    """Return True if tld is a valid top level domain"""
+    tlds = ["com", "net", "biz", "us", "info", "online", "org"]
+    return tld in tlds
+
+
+def valid_domain(domain):
+    """Return True if domain is not blank,
+    and contains a valid top level domain name."""
+    try:
+        return valid_tld(domain.split('.')[-1])
+    except IndexError:
+        return False
+    except ValueError:
+        return False
+
+
 def resolve_ip(domain_name):
     """Resolve IPV4 address from domain name"""
     #TODO remove whitespace, otherwise it won't resolve

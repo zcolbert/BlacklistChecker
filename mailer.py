@@ -47,6 +47,11 @@ class MessageTemplate:
     def __init__(self, file_stream):
         self.file_stream = file_stream
 
+    def add_html_comment(self, indent_level, comment):
+        for i in range(indent_level):
+            self.file_stream.write("\t")
+        self.file_stream.write("<!-- %s -->\n" % comment)
+
     def write_html_header(self):
         """Write the opening boilerplate tags for an HTML document"""
         self.file_stream.write("<!DOCTYPE html>\n\n")
@@ -72,6 +77,7 @@ class MessageTemplate:
         self.file_stream.write("\t\t\t<tbody>\n")
         # Write the contents of the header row
         self.write_table_row(fieldnames)
+        self.add_html_comment(4, "Begin blacklisted domain records")
 
     def write_table_row(self, fields):
         """Write a table row containing values for each item in fields."""

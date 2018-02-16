@@ -9,27 +9,10 @@ import ipdns
 from blacklists import domain_blacklists, ip_blacklists
 
 
-def valid_tld(tld):
-    """Return True if tld is a valid top level domain"""
-    tlds = ["com", "net", "biz", "us", "info", "online"]
-    return tld in tlds
-
-
-def valid_domain(domain):
-    """Return True if domain is not blank,
-    and contains a valid top level domain name."""
-    try:
-        return valid_tld(domain.split('.')[-1])
-    except IndexError:
-        return False
-    except ValueError:
-        return False
-
-
 def get_domain():
     """Return a valid domain name from user input."""
     domain = input("Enter domain name: ")
-    while not valid_domain(domain):
+    while not ipdns.valid_domain(domain):
         domain = input("Invalid entry. Enter domain name: ")
     return domain
 

@@ -35,6 +35,15 @@ def load_domain_list():
 
     return domains
 
+def get_blacklists(bl_file):
+    dbl_lists = []
+    print("Opening", bl_file, "...")
+    with open(bl_file, 'r', newline='') as file:
+        for line in file:
+            if ipdns.valid_domain(line.strip()):
+                dbl_lists.append(line)
+
+    return dbl_lists
 
 def lookup_domains(domain_list):
     """Check each domain against the IP Blacklists and Domain Blacklists.
@@ -145,7 +154,7 @@ def main():
     listed_domains = lookup_domains(domains)  # Contains ListedDomain objects
     generate_report(listed_domains, REPORT_FILE)
     generate_email_template(listed_domains, MSG_TEMPLATE)
-    send_report_email("support@myzensend.com", MSG_TEMPLATE)
+    #send_report_email("support@myzensend.com", MSG_TEMPLATE)
 
 
 main()

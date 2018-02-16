@@ -1,6 +1,6 @@
 #! python3
 
-from lookup import valid_domain, valid_tld
+from ipdns import valid_domain, valid_tld
 
 def test_tld_validation():
     print("com", valid_tld("com"))
@@ -12,6 +12,7 @@ def test_tld_validation():
     print("blank", valid_tld(""))
     print("abc", valid_tld("abc"))
     print("-1", valid_tld("-1"))
+    print("org", valid_tld("org"))
 
 
 def test_domain_validation():
@@ -32,7 +33,8 @@ def test_domain_validation():
                      "test.us",
                      "test.online",
                      "test.info",
-                     "test.net"]
+                     "test.net",
+                     "fresh.spameatingmonkey.org"]
 
     print("====== TESTING DOMAIN VALIDATION ======")
     for domain in invalid_domains:
@@ -59,3 +61,4 @@ def run_all_tests():
     test_tld_validation()
     test_domain_validation()
 
+run_all_tests()
