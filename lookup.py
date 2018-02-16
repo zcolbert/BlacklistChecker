@@ -50,8 +50,5 @@ def main():
         lookup(get_domain())
 
 
-main()
-
-
-
-
+if __name__ == "__main__":
+    main()

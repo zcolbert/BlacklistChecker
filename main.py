@@ -5,7 +5,6 @@ import datetime
 import ipdns
 from domains import DomainRecord, ListedDomain
 from mailer import SSLMailer, MessageTemplate
-from blacklists import ip_blacklists, domain_blacklists
 from configparser import ConfigParser
 
 
@@ -41,7 +40,7 @@ def get_blacklists(bl_file):
     with open(bl_file, 'r', newline='') as file:
         for line in file:
             if ipdns.valid_domain(line.strip()):
-                dbl_lists.append(line)
+                dbl_lists.append(line.strip())
 
     return dbl_lists
 
@@ -49,6 +48,11 @@ def lookup_domains(domain_list):
     """Check each domain against the IP Blacklists and Domain Blacklists.
     The IP lookup will return a result if the IP or Domain is listed.
     Otherwise, the lookup will return None"""
+    cfg = ConfigParser()
+    cfg.read(CONFIG_FILE)
+
+    ip_blacklists = get_blacklists(cfg.get("BLACKLIST", "IP_Lists"))
+    domain_blacklists = get_blacklists(cfg.get("BLACKLIST", "DBL_Lists"))
 
     listed_domains = []
     inactive_domains = []
@@ -157,4 +161,5 @@ def main():
     #send_report_email("support@myzensend.com", MSG_TEMPLATE)
 
 
-main()
+if __name__ == "__main__":
+    main()
