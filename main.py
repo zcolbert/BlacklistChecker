@@ -11,15 +11,13 @@ from configparser import ConfigParser
 
 CONFIG_FILE = "config.ini"
 MSG_TEMPLATE = "files/email_template.txt"
-DOMAIN_FILE = "C:\\Users\\Zachary\\Documents\\IBW\\Accounts\\domains.csv"
-REPORT_FILE = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-%Y")
 
 
-def load_domain_list():
+def load_domain_list(domain_file):
     """Load the list of active customer domains
     into an array of DomainRecord objects."""
     domains = []
-    with open(DOMAIN_FILE, 'r') as file:
+    with open(domain_file, 'r') as file:
         reader = csv.DictReader(file, dialect='excel')
 
         for row in reader:
@@ -47,15 +45,10 @@ def get_blacklists(bl_file):
     return dbl_lists
 
 
-def lookup_domains(domain_list):
+def lookup_domains(domain_list, ip_blacklists, domain_blacklists):
     """Check each domain against the IP Blacklists and Domain Blacklists.
     The IP lookup will return a result if the IP or Domain is listed.
     Otherwise, the lookup will return None"""
-    cfg = ConfigParser()
-    cfg.read(CONFIG_FILE)
-
-    ip_blacklists = get_blacklists(cfg.get("BLACKLIST", "IP_Lists"))
-    domain_blacklists = get_blacklists(cfg.get("BLACKLIST", "DBL_Lists"))
 
     listed_domains = []
     inactive_domains = []
@@ -95,16 +88,14 @@ def log_inactive_domains(inactive_domains):
             file.write(domain + "\n")
 
 
-def generate_report(listed_domains):
+def generate_report(listed_domains, output_directory):
     """Create a CSV report containing
     information about each listed domain"""
-    cfg = ConfigParser()
-    cfg.read(CONFIG_FILE)
+    filename = "blacklist_report_%s.csv" \
+               % datetime.date.today().strftime("%m-%d-%Y")
+    file_path = os.path.join(output_directory, filename)
 
-    filename = "blacklist_report_%s.csv" % datetime.date.today().strftime("%m-%d-%Y")
-    report_file = os.path.join(cfg.get("FILES", "ReportSaveLocation"), filename)
-
-    with open(report_file, 'w', newline="") as report:
+    with open(file_path, 'w', newline="") as report:
         writer = csv.writer(report, dialect='excel')
         writer.writerow(["Account", "ID", "Domain Name", "IP Address",
                          "Listed On", "List Type", "Previously Blacklisted"])
@@ -162,12 +153,21 @@ def send_report_email(recipient, message_template):
 
 
 def main():
-    domains = load_domain_list()
+
+    cfg = ConfigParser()
+    cfg.read(CONFIG_FILE)
+
+    domains = load_domain_list(cfg.get("FILES", "DomainFile"))
+
     # Check each of the domains against the BL and DBL
-    listed_domains = lookup_domains(domains)  # Contains ListedDomain objects
-    generate_report(listed_domains)
+    ip_blacklists = get_blacklists(cfg.get("BLACKLIST", "IP_Lists"))
+    domain_blacklists = get_blacklists(cfg.get("BLACKLIST", "DBL_Lists"))
+    listed_domains = lookup_domains(domains, ip_blacklists, domain_blacklists)
+
+    generate_report(listed_domains, cfg.get("FILES", "ReportSaveLocation"))
     generate_email_template(listed_domains, MSG_TEMPLATE)
-    #send_report_email("support@myzensend.com", MSG_TEMPLATE)
+
+    send_report_email(cfg.get("EMAIL_OPTIONS", "ReportRecipient"), MSG_TEMPLATE)
 
 
 if __name__ == "__main__":
