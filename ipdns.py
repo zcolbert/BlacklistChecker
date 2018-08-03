@@ -15,7 +15,7 @@ class DnsResolver:
         return socket.gethostbyname(domain)
 
     def resolve_domain_from_ipv4(self, ip_address):
-        pass
+        raise NotImplementedError('DnsResolver.resolve_domain_from_ipv4 not implemented')
 
     def reverse_ip(self, ip_address):
         """Reverse the octets of an IP address."""
@@ -24,14 +24,19 @@ class DnsResolver:
 
 class Domain:
     def __init__(self, domain_str):
-        self.name = ''
-        self.tld = ''
-        self.split_domain(domain_str)
+        self.domain = domain_str
+        self.resolver = DnsResolver()
+        self.ipv4_address = ''
+        self.names = domain_str.split('.')
 
-    def split_domain(self, domain):
-        pass
+    def get_name(self):
+        return self.names[-2]
 
+    def get_tld(self):
+        return self.names[-1]
 
+    def get_ipv4(self):
+        return self.resolver.resolve_ipv4_from_domain(self.domain)
 
 
 
@@ -39,18 +44,18 @@ class DomainValidator:
     def __init__(self, valid_tlds):
         self.resolver = DnsResolver()
         self.tld_validator = TLDValidator(valid_tlds)
-        # Valid chars: a-z, A-Z, 0-9, -
-        # Cannot begin or end with -
-        # Cannot be numeric only
         self.valid_domain_char_regex = re.compile(
+            # Valid chars: a-z, A-Z, 0-9, '-'
+            # Cannot begin or end with '-', cannot be only numeric
             '^[a-zA-Z0-9]*[a-zA-Z]+[a-zA-Z0-9]*[a-zA-Z0-9]$'
         )
 
-    def domain_is_valid(self, domain):
+    def domain_is_valid(self, domain_str):
         """Return True if domain is properly formatted,
         and contains a valid top level domain name."""
-        return (self.tld_is_valid(domain.tld)
-                and self.format_is_valid(domain.name))
+        domain = Domain(domain_str)
+        return (self.tld_is_valid(domain.get_tld())
+                and self.format_is_valid(domain.get_name()))
 
     def tld_is_valid(self, tld):
         return self.tld_validator.tld_is_valid(tld)
@@ -63,7 +68,6 @@ class DomainValidator:
 
     def domain_is_active(self, domain):
         pass
-
 
 
 class TLDValidator:
@@ -93,3 +97,12 @@ class BlacklistChecker:
         """Check target_domain against domain_blacklist.
         Query is in the form os: target_domain.domain_blacklist.com"""
         return resolve_ip(target_domain + '.' + domain_blacklist)
+
+    def domain_is_on_domain_blacklist(self, domain):
+        pass
+
+    def domain_is_on_ip_blacklist(self, domain):
+        pass
+
+    def ip_is_on_ip_blacklist(self, ip_address):
+        pass
