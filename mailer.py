@@ -13,8 +13,9 @@ from email.mime.text import MIMEText
 
 class SSLMailer:
     """Send a message via SSL based email server"""
-    def __init__(self, server, port, username, password, message_template):
+    def __init__(self, server, port, username, password, message_template, subject):
         self.message_template = message_template  # Contains message body
+        self.subject = subject
         self.server = smtplib.SMTP_SSL(server, port)
         self.server.login(username, password)
         self.from_name = username
@@ -25,7 +26,9 @@ class SSLMailer:
     def initialize_message_header(self):
         """Initialize the email message header content."""
         today = datetime.date.today().strftime("%m-%d-%Y")
-        self.msg["Subject"] = "Blacklist Report " + today
+        if self.subject == "":
+            self.subject = "Blacklist Report"
+        self.msg["Subject"] = self.subject + ' ' + today
         self.msg["From"] = self.from_name
         self.msg.preamble = "Blacklist Report " + today
 
@@ -82,10 +85,8 @@ class MessageTemplate:
     def write_table_row(self, fields):
         """Write a table row containing values for each item in fields."""
         self.file_stream.write("\t\t\t\t<tr>\n")
-
         for field in fields:
             self.write_table_field(field)
-
         self.file_stream.write("\t\t\t\t</tr>\n")
 
     def write_table_footer(self):

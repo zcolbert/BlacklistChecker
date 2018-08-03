@@ -1,12 +1,23 @@
 
 class DomainRecord:
-    def __init__(self):
+    def __init__(self, file_record=None):
+        self.record = file_record
         self.name = ""
         self.role = ""
         self.master = ""
         self.account = ""
         self.acct_id = ""
         self.prev_listed = ""
+        self.update_record()
+
+    def update_record(self):
+        if not self.record == None:
+            self.name = self.record["Domain"]
+            self.role = self.record["Role"]
+            self.master = self.record["Master"]
+            self.account = self.record["IBW Account Name"]
+            self.acct_id = self.record["IBW Account ID"]
+
 
 class ListedDomain(DomainRecord):
     """Represents a domain name that has been listed on an

@@ -12,7 +12,8 @@ from configparser import ConfigParser
 CONFIG_FILE = "config.ini"
 MSG_TEMPLATE = "files/email_template.txt"
 
-
+# TODO supply acct id to filter. Show acct name in subj line
+# def load_domain_list(domain_file, id="")
 def load_domain_list(domain_file):
     """Load the list of active customer domains
     into an array of DomainRecord objects."""
@@ -21,20 +22,18 @@ def load_domain_list(domain_file):
         reader = csv.DictReader(file, dialect='excel')
 
         for row in reader:
-            if row["Domain"] != "" and row["Status"] == "Active":
-                temp_row = DomainRecord()
-                temp_row.name = row["Domain"]
-                temp_row.role = row["Role"]
-                temp_row.master = row["Master"]
-                temp_row.account = row["IBW Account Name"]
-                temp_row.acct_id = row["IBW Account ID"]
-
+            if is_active_domain(row["Domain"], row["Status"]):
+                temp_row = DomainRecord(row)
                 domains.append(temp_row)
 
     return domains
 
 
-def get_blacklists(bl_file):
+def is_active_domain(domain, status):
+    return domain != "" and status == "Active"
+
+
+def retrieve_blacklists(bl_file):
     """Return array of blacklist domains read from bl_file."""
     dbl_lists = []
     with open(bl_file, 'r') as file:
@@ -43,6 +42,15 @@ def get_blacklists(bl_file):
                 dbl_lists.append(line.strip())
 
     return dbl_lists
+
+
+def check_against_ip_blacklists(ip_address, ip_blacklists):
+    # Check against IP blacklists
+    pass
+
+
+def check_against_domain_blacklists(domain_name):
+    pass
 
 
 def lookup_domains(domain_list, ip_blacklists, domain_blacklists):
@@ -130,18 +138,20 @@ def generate_email_template(listed_domains, template_file):
         msg.generate_template_footer()
 
 
-def send_report_email(recipient, message_template):
+def send_report_email(recipient, message_template, subject=""):
     """Send the report email to the recipient"""
     cfg = ConfigParser()
     cfg.read(CONFIG_FILE)
 
     print("Sending report email ...")
     try:
-        mailer = SSLMailer(cfg.get("EMAIL_OPTIONS", "SmtpServer"),
-                           cfg.get("EMAIL_OPTIONS", "SSLPort"),
-                           cfg.get("EMAIL_OPTIONS", "UserName"),
-                           cfg.get("EMAIL_OPTIONS", "SmtpPasswd"),
-                           message_template)
+        mailer = SSLMailer(
+                    cfg.get("EMAIL_OPTIONS", "SmtpServer"),
+                    cfg.get("EMAIL_OPTIONS", "SSLPort"),
+                    cfg.get("EMAIL_OPTIONS", "UserName"),
+                    cfg.get("EMAIL_OPTIONS", "SmtpPasswd"),
+                    message_template, subject
+                )
         mailer.send(recipient)
         print("Email sent successfully")
     except:
@@ -157,11 +167,13 @@ def main():
     cfg = ConfigParser()
     cfg.read(CONFIG_FILE)
 
+
     domains = load_domain_list(cfg.get("FILES", "DomainFile"))
+    #domains = load_domain_list(cfg.get("FILES", "BlueYonder"))
 
     # Check each of the domains against the BL and DBL
-    ip_blacklists = get_blacklists(cfg.get("BLACKLIST", "IP_Lists"))
-    domain_blacklists = get_blacklists(cfg.get("BLACKLIST", "DBL_Lists"))
+    ip_blacklists = retrieve_blacklists(cfg.get("BLACKLIST", "IP_Lists"))
+    domain_blacklists = retrieve_blacklists(cfg.get("BLACKLIST", "DBL_Lists"))
     listed_domains = lookup_domains(domains, ip_blacklists, domain_blacklists)
 
     generate_report(listed_domains, cfg.get("FILES", "ReportSaveLocation"))

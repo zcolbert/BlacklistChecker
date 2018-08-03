@@ -16,6 +16,11 @@ def get_domain():
         domain = input("Invalid entry. Enter domain name: ")
     return domain
 
+def check_against_ip_blacklist(domain):
+    pass
+
+def check_against_domain_blacklist(domain):
+    pass
 
 def lookup(domain):
     """Check domain against domain blacklists,

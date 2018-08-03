@@ -8,6 +8,34 @@
 import socket
 
 
+class DnsResolver:
+    def __init__(self, valid_tlds):
+        self.valid_tlds = valid_tlds
+
+    def resolve_ip(self, domain):
+        """Resolve domain name and return its IP address."""
+        if not self.valid_domain(domain):
+             raise ValueError("Invalid domain: " + domain)
+        return socket.gethostbyname(domain)
+
+    def reverse_ip(self, ip_address):
+        """Reverse the octets of an IP address."""
+        return '.'.join(reversed(str(ip_address).split('.')))
+
+    def valid_tld(self, tld):
+        return tld in self.valid_tlds
+
+    def valid_domain(self, domain):
+        pass
+
+
+
+class Domain:
+    def __init__(self, domain_name, ip_address):
+        self.name = domain_name
+        self.ip_address = ip_address
+
+
 def valid_tld(tld):
     """Return True if tld is a valid top level domain"""
     tlds = ["com", "net", "biz", "us", "info", "online", "org"]
@@ -17,6 +45,9 @@ def valid_tld(tld):
 def valid_domain(domain):
     """Return True if domain is not blank,
     and contains a valid top level domain name."""
+    # Domain cannot contain spaces, or some other special characters
+    # Domain must have a valid TLD
+
     try:
         return valid_tld(domain.split('.')[-1])
     except IndexError:

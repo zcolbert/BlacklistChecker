@@ -1,11 +1,11 @@
 #! python3
 
-from main import get_blacklists
+from main import retrieve_blacklists
 import ipdns
 
 def test():
-    ipbls = get_blacklists("../files/ip_blacklists.txt")
-    dbls = get_blacklists("../files/domain_blacklists.txt")
+    ipbls = retrieve_blacklists("../files/ip_blacklists.txt")
+    dbls = retrieve_blacklists("../files/domain_blacklists.txt")
 
     print("IP Blacklists:", len(ipbls))
     print(ipbls, '\n')
