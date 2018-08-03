@@ -17,28 +17,20 @@ class DnsResolver:
     def resolve_domain_from_ipv4(self, ip_address):
         raise NotImplementedError('DnsResolver.resolve_domain_from_ipv4 not implemented')
 
-    def reverse_ip(self, ip_address):
-        """Reverse the octets of an IP address."""
-        return '.'.join(reversed(str(ip_address).split('.')))
 
 
 class Domain:
     def __init__(self, domain_str):
-        self.domain = domain_str
         self.resolver = DnsResolver()
-        self.ipv4_address = ''
-        self.names = domain_str.split('.')
-
-    def get_name(self):
-        return self.names[-2]
-
-    def get_tld(self):
-        return self.names[-1]
+        self.name = domain_str
+        self.tld = self.name.split('.')[-1]
 
     def get_ipv4(self):
-        return self.resolver.resolve_ipv4_from_domain(self.domain)
+        return self.resolver.resolve_ipv4_from_domain(self.name)
 
-
+    def get_reverse_ipv4_address(self):
+        """Reverse the octets of an IP address."""
+        return '.'.join(reversed(self.get_ipv4().split('.')))
 
 class DomainValidator:
     def __init__(self, valid_tlds):
@@ -80,29 +72,3 @@ class TLDValidator:
         return tld.upper() in self.valid_tlds
 
 
-class BlacklistChecker:
-
-    def bl_lookup_by_ip(ip_address, blacklist):
-        """Check ip_address against an IP blacklist.
-        Query is in the form of: reversed_ip.target.blacklist.com"""
-        return resolve_ip(reverse_ip(ip_address) + '.' + blacklist)
-
-
-    def bl_lookup_by_domain(domain, blacklist):
-        """Resolve IP from domain, then check against IP blacklist"""
-        return bl_lookup_by_ip(resolve_ip(domain), blacklist)
-
-
-    def dbl_lookup(target_domain, domain_blacklist):
-        """Check target_domain against domain_blacklist.
-        Query is in the form os: target_domain.domain_blacklist.com"""
-        return resolve_ip(target_domain + '.' + domain_blacklist)
-
-    def domain_is_on_domain_blacklist(self, domain):
-        pass
-
-    def domain_is_on_ip_blacklist(self, domain):
-        pass
-
-    def ip_is_on_ip_blacklist(self, ip_address):
-        pass
