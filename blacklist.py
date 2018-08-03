@@ -7,6 +7,10 @@ class ListedDomain:
         self.domain = domain
         self.blacklists = []
 
+    def add_blacklist(self, blacklist):
+        if not blacklist in self.blacklists:
+            self.blacklists.append(blacklist)
+
 
 class Blacklist(ABC):
     def __init__(self, query_zone):
@@ -28,6 +32,9 @@ class IPBlacklist(Blacklist):
         Blacklist.__init__(self, query_zone)
         self.query_type = 'ip'
 
+    def __repr__(self):
+        return 'IPBlacklist<query_zone="%s">' % self.query_zone
+
     def lookup(self, domain):
         reversed_ip = domain.get_reverse_ipv4_address()
         lookup_addr = reversed_ip + '.' + self.query_zone
@@ -42,6 +49,9 @@ class DomainBlacklist(Blacklist):
     def lookup(self, domain):
         lookup_addr = domain.name + '.' + self.query_zone
         return self.resolver.resolve_ipv4_from_domain(lookup_addr)
+
+    def __repr__(self):
+        return 'DomainBlacklist<query_zone="%s">' % self.query_zone
 
 
 class BlacklistChecker:
@@ -75,12 +85,15 @@ class BlacklistChecker:
                 print(result)
 
     def update_listed_domains(self, domain, blacklist):
-        print('Updating blacklists')
-        result = self.listed_domains[domain.name]
-        print(result)
+        if domain.name in self.listed_domains:
+            self.listed_domains[domain.name].add_blacklist(blacklist)
+        else:
+            listing = ListedDomain(domain)
+            listing.add_blacklist(blacklist)
+            self.listed_domains[domain.name] = listing
 
-    def add_listing_if_nonexistent(self):
-        pass
+    def domain_is_listed(self, domain):
+        return domain.name in self.listed_domains
 
     def get_listing_info(self, domain):
-        pass
+        return self.listed_domains[domain.name].blacklists
