@@ -7,6 +7,9 @@ class ListedDomain:
         self.domain = domain
         self.blacklists = []
 
+    def __repr__(self):
+        return 'ListedDomain<name"%s" listings=%d>' % (self.domain.name, len(self.blacklists))
+
     def add_blacklist(self, blacklist):
         if not blacklist in self.blacklists:
             self.blacklists.append(blacklist)
@@ -64,25 +67,20 @@ class BlacklistChecker:
         result = blacklist.lookup(domain)
         if result:
             self.update_listed_domains(domain, blacklist)
-            return True
-        return False
 
     def check_against_all_blacklists(self, domain):
         for b in self.blacklists:
-            result = self.check_against_blacklist(domain, b)
-            print(result)
+            self.check_against_blacklist(domain, b)
 
     def check_against_ip_blacklists(self, domain):
         for b in self.blacklists:
             if b.query_type == 'ip':
-                result = self.check_against_blacklist(domain, b)
-                print(result)
+                self.check_against_blacklist(domain, b)
 
     def check_against_domain_blacklists(self, domain):
         for b in self.blacklists:
             if b.query_type == 'domain':
-                result = self.check_against_blacklist(domain, b)
-                print(result)
+                self.check_against_blacklist(domain, b)
 
     def update_listed_domains(self, domain, blacklist):
         if domain.name in self.listed_domains:
@@ -97,3 +95,9 @@ class BlacklistChecker:
 
     def get_listing_info(self, domain):
         return self.listed_domains[domain.name].blacklists
+
+    def get_listed_domains(self):
+        listed = []
+        for d in self.listed_domains:
+            listed.append(self.listed_domains[d])
+        return listed

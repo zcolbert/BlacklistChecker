@@ -1,59 +1,55 @@
+#! python3
 # ===================================================================
 # Module Name:  lookup.py
 # Purpose:      Lookup blacklist status of a single domain.
 # ===================================================================
 
-#! python3
-
+import csv
 import ipdns
-from blacklists import domain_blacklists, ip_blacklists
+from blacklist import IPBlacklist, DomainBlacklist, ListedDomain, BlacklistChecker
+from socket import gaierror
+
+DOMAIN_FILE = 'C:/Users/Zachary/Documents/IBW/Accounts/domains_csv.csv'
 
 
-def get_domain():
-    """Return a valid domain name from user input."""
-    domain = input("Enter domain name: ")
-    while not ipdns.valid_domain(domain):
-        domain = input("Invalid entry. Enter domain name: ")
-    return domain
+def get_active_domains():
+    with open(DOMAIN_FILE, 'r') as domain_file:
+        reader = csv.DictReader(domain_file)
+        for row in reader:
+            return [row['Domain'] for row in reader if row['Status'] == 'Active']
 
-def check_against_ip_blacklist(domain):
+
+def lookup_domains_by_ip(domains):
+    with open(DOMAIN_FILE, 'r') as domain_file:
+        reader = csv.DictReader(domain_file)
+        for row in reader:
+            if row['Status'] == 'Active':
+                print('Account is active:', row['IBW Account Name'])
+
+
+def init_blacklists(bl_file):
     pass
-
-def check_against_domain_blacklist(domain):
-    pass
-
-def lookup(domain):
-    """Check domain against domain blacklists,
-    and IP blacklists. Print a report of any listings."""
-    times_listed = 0
-    print("============", domain, "============")
-
-    ip = ipdns.resolve_ip(domain)
-    if ip is None:
-        print("Unable to resolve IP")
-        return 1
-
-    for bl in ip_blacklists:
-        if ipdns.bl_lookup_by_ip(ip, bl) is not None:
-            print("IP is listed on:", bl)
-            times_listed += 1
-
-    for dbl in domain_blacklists:
-        if ipdns.dbl_lookup(domain, dbl) is not None:
-            print("Domain is listed on:", dbl)
-            times_listed += 1
-
-    if times_listed > 0:
-        print("Total listings:", times_listed)
-    else:
-        print("No listings.")
 
 
 def main():
+    blacklists = init_blacklists('')
+    checker = BlacklistChecker(blacklists)
 
-    while True:
-        lookup(get_domain())
+    active = get_active_domains()
+    active_domains = [ipdns.Domain(a) for a in active]
 
+    blacklist = DomainBlacklist('dbl.spamhaus.org')
+    for domain in active_domains:
+        try:
+            checker.check_against_blacklist(domain, blacklist)
+        except gaierror:
+            print('Domain is inactive:', domain.name)
+
+    print('Total listed domains:', len(checker.listed_domains))
+
+    listed = checker.get_listed_domains()
+    for d in listed:
+        print(d)
 
 if __name__ == "__main__":
     main()
