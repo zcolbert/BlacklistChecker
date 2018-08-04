@@ -18,7 +18,6 @@ class DnsResolver:
         raise NotImplementedError('DnsResolver.resolve_domain_from_ipv4 not implemented')
 
 
-
 class Domain:
     def __init__(self, domain_str):
         self.resolver = DnsResolver()
@@ -28,9 +27,10 @@ class Domain:
     def get_ipv4(self):
         return self.resolver.resolve_ipv4_from_domain(self.name)
 
-    def get_reverse_ipv4_address(self):
+    def get_reverse_ipv4(self):
         """Reverse the octets of an IP address."""
         return '.'.join(reversed(self.get_ipv4().split('.')))
+
 
 class DomainValidator:
     def __init__(self, valid_tlds):

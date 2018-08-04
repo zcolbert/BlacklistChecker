@@ -36,7 +36,7 @@ class IPBlacklist(Blacklist):
         return 'IPBlacklist<query_zone="%s">' % self.query_zone
 
     def lookup(self, domain):
-        reversed_ip = domain.get_reverse_ipv4_address()
+        reversed_ip = domain.get_reverse_ipv4()
         lookup_addr = reversed_ip + '.' + self.query_zone
         return self.resolver.resolve_ipv4_from_domain(lookup_addr)
 
@@ -46,12 +46,12 @@ class DomainBlacklist(Blacklist):
         Blacklist.__init__(self, query_zone)
         self.query_type = 'domain'
 
+    def __repr__(self):
+        return 'DomainBlacklist<query_zone="%s">' % self.query_zone
+
     def lookup(self, domain):
         lookup_addr = domain.name + '.' + self.query_zone
         return self.resolver.resolve_ipv4_from_domain(lookup_addr)
-
-    def __repr__(self):
-        return 'DomainBlacklist<query_zone="%s">' % self.query_zone
 
 
 class BlacklistChecker:
