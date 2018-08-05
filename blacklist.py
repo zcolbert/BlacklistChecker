@@ -8,7 +8,7 @@ class ListedDomain:
         self.blacklists = []
 
     def __repr__(self):
-        return 'ListedDomain<name"%s" listings=%d>' % (self.domain.name, len(self.blacklists))
+        return 'ListedDomain<name="%s" listings=%d>' % (self.domain.name, len(self.blacklists))
 
     def add_blacklist(self, blacklist):
         if not blacklist in self.blacklists:
@@ -97,7 +97,4 @@ class BlacklistChecker:
         return self.listed_domains[domain.name].blacklists
 
     def get_listed_domains(self):
-        listed = []
-        for d in self.listed_domains:
-            listed.append(self.listed_domains[d])
-        return listed
+        return [self.listed_domains[d] for d in self.listed_domains]
