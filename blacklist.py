@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from ipdns import DnsResolver
-from socket import gaierror
 
 class ListedDomain:
     def __init__(self, domain):
@@ -8,7 +7,8 @@ class ListedDomain:
         self.blacklists = []
 
     def __repr__(self):
-        return 'ListedDomain<name="%s" listings=%d>' % (self.domain.name, len(self.blacklists))
+        return ('ListedDomain<name="%s" listings=%d>'
+                % (self.domain.name, len(self.blacklists)))
 
     def add_blacklist(self, blacklist):
         if not blacklist in self.blacklists:
