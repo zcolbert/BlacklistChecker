@@ -1,5 +1,7 @@
-from ipdns import DnsResolver
 from socket import gaierror
+import re # regex for domain validation
+from ipdns import DnsResolver
+
 
 class Domain:
     def __init__(self, domain_str):
@@ -23,4 +25,44 @@ class Domain:
             return True
         except gaierror:
             return False
+
+
+class DomainValidator:
+    def __init__(self, valid_tlds):
+        self.resolver = DnsResolver()
+        self.tld_validator = TLDValidator(valid_tlds)
+        self.valid_domain_char_regex = re.compile(
+            # Valid chars: a-z, A-Z, 0-9, '-'
+            # Cannot begin or end with '-', cannot be only numeric
+            '^[a-zA-Z0-9]*[a-zA-Z]+[a-zA-Z0-9]*[a-zA-Z0-9]$'
+        )
+
+    def domain_is_valid(self, domain_str):
+        """Return True if domain is properly formatted,
+        and contains a valid top level domain name."""
+        domain = Domain(domain_str)
+        return (self.tld_is_valid(domain.tld)
+                and self.format_is_valid(domain.tld))
+
+    def tld_is_valid(self, tld):
+        return self.tld_validator.tld_is_valid(tld)
+
+    def format_is_valid(self, domain):
+        if len(domain) < 3 or len(domain) > 63:
+            return False
+        result = self.valid_domain_char_regex.search(domain)
+        return result is not None
+
+    def domain_is_active(self, domain):
+        pass
+
+
+class TLDValidator:
+    def __init__(self, valid_tlds):
+        self.valid_tlds = valid_tlds
+
+    def tld_is_valid(self, tld):
+        if tld == '':
+            return False
+        return tld.upper() in self.valid_tlds
 
