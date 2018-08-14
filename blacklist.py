@@ -1,12 +1,6 @@
 from abc import ABC, abstractmethod
 from ipdns import DnsResolver
-from enum import Enum
 from socket import gaierror
-
-
-class ListType(Enum):
-    IP_ADDRESS = 0
-    DOMAIN = 1
 
 
 class ListedDomain:
@@ -27,7 +21,7 @@ class Blacklist(ABC):
     def __init__(self, query_zone, alias=''):
         self.resolver = DnsResolver()
         self.query_zone = query_zone
-        self.query_type = ListType
+        self.query_type = ''
         self.alias = alias
         self.description = ''
         self.delisting = ''
@@ -41,7 +35,7 @@ class Blacklist(ABC):
 class IPBlacklist(Blacklist):
     def __init__(self, query_zone, alias=''):
         Blacklist.__init__(self, query_zone, alias)
-        self.query_type = ListType.IP_ADDRESS
+        self.query_type = 'IP Address'
 
     def __repr__(self):
         return ('IPBlacklist<alias="%s" query_zone="%s">'
@@ -59,7 +53,7 @@ class IPBlacklist(Blacklist):
 class DomainBlacklist(Blacklist):
     def __init__(self, query_zone, alias=''):
         Blacklist.__init__(self, query_zone, alias)
-        self.query_type = ListType.DOMAIN
+        self.query_type = 'Domain'
 
     def __repr__(self):
         return ('DomainBlacklist<alias="%s" query_zone="%s">' \
@@ -90,12 +84,12 @@ class BlacklistChecker:
 
     def check_against_ip_blacklists(self, domain):
         for b in self.blacklists:
-            if b.query_type == ListType.IP_ADDRESS:
+            if b.query_type == 'IP Address':
                 self.check_against_blacklist(domain, b)
 
     def check_against_domain_blacklists(self, domain):
         for b in self.blacklists:
-            if b.query_type == ListType.DOMAIN:
+            if b.query_type == 'Domain':
                 self.check_against_blacklist(domain, b)
 
     def update_listed_domains(self, domain, blacklist):
