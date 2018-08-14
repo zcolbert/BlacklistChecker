@@ -5,51 +5,77 @@
 # ===================================================================
 
 import csv
-import ipdns
+from configparser import ConfigParser
+from domain import Domain
 from blacklist import IPBlacklist, DomainBlacklist, ListedDomain, BlacklistChecker
-from socket import gaierror
-
-DOMAIN_FILE = 'C:/Users/Zachary/Documents/IBW/Accounts/domains_csv.csv'
 
 
-def get_active_domains():
-    with open(DOMAIN_FILE, 'r') as domain_file:
-        reader = csv.DictReader(domain_file)
-        for row in reader:
-            return [row['Domain'] for row in reader if row['Status'] == 'Active']
+def load_domains_from_csv(filename, status='', key='Domain'):
+    with open(filename, 'r') as srcfile:
+        reader = csv.DictReader(srcfile)
+        if status != '':
+            return [Domain(row[key]) for row in reader if row['Status' == status]]
+        else:
+            return [Domain(row[key]) for row in reader]
 
 
-def lookup_domains_by_ip(domains):
-    with open(DOMAIN_FILE, 'r') as domain_file:
-        reader = csv.DictReader(domain_file)
-        for row in reader:
-            if row['Status'] == 'Active':
-                print('Account is active:', row['IBW Account Name'])
-
-
-def init_blacklists(bl_file):
+def load_domains_from_excel(filename, status='', key='Domain'):
     pass
 
 
-def main():
-    blacklists = init_blacklists('')
+def lookup_domain(domain, checker):
+    print('=' * 48)
+    print('{} ({})'.format(
+        domain.name, domain.get_ipv4()))
+    print('{:-<48}'.format(''))
+    if domain.is_active():
+        checker.check_against_all_blacklists(domain)
+
+        if checker.domain_is_listed(domain):
+            results = checker.get_listing_info(domain)
+            for r in results:
+                print('{:<12} @ {:<32}'.format(
+                    r.query_type, r.alias
+                ))
+            print()
+            print('TOTAL LISTINGS:', len(results))
+    else:
+        print('Domain is inactive.')
+    print('=' * 48)
+    print()
+
+
+def load_blacklists_from_csv(filename):
+    lists = []
+    with open(filename, 'r') as srcfile:
+        reader = csv.DictReader(srcfile)
+        for row in reader:
+            zone = row['Query Zone']
+            list_type = row['Query Type']
+            if list_type == 'Domain':
+                lists.append(DomainBlacklist(zone, alias=row['Alias']))
+            elif list_type == 'IP Address':
+                lists.append(IPBlacklist(zone, alias=row['Alias']))
+            else:
+                continue
+    return lists
+
+
+def lookup_domains():
+
+    cfg = ConfigParser()
+    cfg.read('config.ini')
+
+    domain_file = 'C:/Users/Zachary/Documents/IBW/Accounts/BIDX/domains.csv'
+    domains = load_domains_from_csv(domain_file)
+
+    blacklists = load_blacklists_from_csv(cfg.get('BLACKLIST', 'Blacklists'))
+
     checker = BlacklistChecker(blacklists)
 
-    active = get_active_domains()
-    active_domains = [ipdns.Domain(a) for a in active]
+    for d in domains:
+        lookup_domain(d, checker)
 
-    blacklist = DomainBlacklist('dbl.spamhaus.org')
-    for domain in active_domains:
-        try:
-            checker.check_against_blacklist(domain, blacklist)
-        except gaierror:
-            print('Domain is inactive:', domain.name)
-
-    print('Total listed domains:', len(checker.listed_domains))
-
-    listed = checker.get_listed_domains()
-    for d in listed:
-        print(d)
 
 if __name__ == "__main__":
-    main()
+    lookup_domains()
