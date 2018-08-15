@@ -1,20 +1,37 @@
 from abc import ABC, abstractmethod
 from ipdns import DnsResolver
 from socket import gaierror
+from domain import Domain
 
 
-class ListedDomain:
-    def __init__(self, domain):
-        self.domain = domain
+
+class ListedDomain(Domain):
+    def __init__(self, domain_str):
+        Domain.__init__(self, domain_str)
         self.blacklists = []
+        self.domain_listings = 0
+        self.ip_listings = 0
 
     def __repr__(self):
         return ('ListedDomain<name="%s" listings=%d>'
-                % (self.domain.name, len(self.blacklists)))
+                % (self.name, len(self.blacklists)))
 
     def add_blacklist(self, blacklist):
+        self.update_listings(blacklist)
         if blacklist not in self.blacklists:
             self.blacklists.append(blacklist)
+
+    def update_listings(self, blacklist):
+        if blacklist.query_type == 'IP Address':
+            self.ip_listings += 1
+        elif blacklist.query_type == 'Domain':
+            self.domain_listings += 1
+
+    def ip_is_listed(self):
+        return self.ip_listings > 0
+
+    def domain_is_listed(self):
+        return self.domain_listings > 0
 
 
 class Blacklist(ABC):
@@ -56,7 +73,7 @@ class DomainBlacklist(Blacklist):
         self.query_type = 'Domain'
 
     def __repr__(self):
-        return ('DomainBlacklist<alias="%s" query_zone="%s">' \
+        return ('DomainBlacklist<alias="%s" query_zone="%s">'
                % (self.alias, self.query_zone))
 
     def lookup(self, domain):
@@ -96,7 +113,7 @@ class BlacklistChecker:
         if domain.name in self.listed_domains:
             self.listed_domains[domain.name].add_blacklist(blacklist)
         else:
-            listing = ListedDomain(domain)
+            listing = ListedDomain(domain.name)
             listing.add_blacklist(blacklist)
             self.listed_domains[domain.name] = listing
 

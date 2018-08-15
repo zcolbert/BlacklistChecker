@@ -8,7 +8,17 @@
 import socket
 
 
+def reverse_ipv4(ip_address):
+    return '.'.join(reversed(ip_address.split('.')))
+
 class DnsResolver:
+
+    def resolve_record(self, record_type):
+        pass
+
+    def get_mx_record(self):
+        pass
+
     def resolve_ipv4_from_domain(self, domain):
         """Resolve domain name and return its IP address."""
         return socket.gethostbyname(domain)

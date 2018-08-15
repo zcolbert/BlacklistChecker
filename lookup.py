@@ -5,6 +5,7 @@
 # ===================================================================
 
 import csv
+from collections import OrderedDict
 from configparser import ConfigParser
 from domain import Domain
 from blacklist import IPBlacklist, DomainBlacklist, ListedDomain, BlacklistChecker
@@ -61,6 +62,22 @@ def load_blacklists_from_csv(filename):
     return lists
 
 
+def create_csv_report(listed_domains, account_name=''):
+    fieldnames = ['Domain', 'IP', 'Domain Listed', 'IP Listed']
+    filename = '_'.join((account_name, 'Listed_Report.csv')).strip('_')
+    with open(filename, 'w', newline='') as srcfile:
+        writer = csv.DictWriter(srcfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for domain in listed_domains:
+            row = OrderedDict()
+            row['Domain'] = domain.name
+            row['IP'] = domain.get_ipv4()
+            row['Domain Listed'] = domain.domain_is_listed()
+            row['IP Listed'] = domain.ip_is_listed()
+            writer.writerow(row)
+
+
 def lookup_domains():
 
     cfg = ConfigParser()
@@ -76,6 +93,7 @@ def lookup_domains():
     for d in domains:
         lookup_domain(d, checker)
 
+    create_csv_report(checker.get_listed_domains(), account_name='BIDX')
 
 if __name__ == "__main__":
     lookup_domains()

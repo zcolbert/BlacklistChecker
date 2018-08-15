@@ -1,11 +1,11 @@
 from socket import gaierror
 import re # regex for domain validation
-from ipdns import DnsResolver
+import ipdns
 
 
 class Domain:
     def __init__(self, domain_str):
-        self.resolver = DnsResolver()
+        self.resolver = ipdns.DnsResolver()
         self.name = domain_str
         self.tld = self.name.split('.')[-1]
 
@@ -17,7 +17,7 @@ class Domain:
 
     def get_reverse_ipv4(self):
         """Reverse the octets of an IP address."""
-        return '.'.join(reversed(self.get_ipv4().split('.')))
+        return ipdns.reverse_ipv4(self.get_ipv4())
 
     def is_active(self):
         try:
@@ -29,7 +29,7 @@ class Domain:
 
 class DomainValidator:
     def __init__(self, valid_tlds):
-        self.resolver = DnsResolver()
+        self.resolver = ipdns.DnsResolver()
         self.tld_validator = TLDValidator(valid_tlds)
         self.valid_domain_char_regex = re.compile(
             # Valid chars: a-z, A-Z, 0-9, '-'
@@ -52,9 +52,6 @@ class DomainValidator:
             return False
         result = self.valid_domain_char_regex.search(domain)
         return result is not None
-
-    def domain_is_active(self, domain):
-        pass
 
 
 class TLDValidator:
