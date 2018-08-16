@@ -1,6 +1,7 @@
 from socket import gaierror
 import re # regex for domain validation
 import ipdns
+import dns.resolver
 
 
 class Domain:

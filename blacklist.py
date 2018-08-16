@@ -61,10 +61,7 @@ class IPBlacklist(Blacklist):
     def lookup(self, domain):
         reversed_ip = domain.get_reverse_ipv4()
         lookup_addr = reversed_ip + '.' + self.query_zone
-        try:
-            return self.resolver.resolve_ipv4_from_domain(lookup_addr)
-        except gaierror:
-            return False
+        return self.resolver.resolve_ipv4_from_domain(lookup_addr)
 
 
 class DomainBlacklist(Blacklist):
@@ -78,10 +75,7 @@ class DomainBlacklist(Blacklist):
 
     def lookup(self, domain):
         lookup_addr = domain.name + '.' + self.query_zone
-        try:
-            return self.resolver.resolve_ipv4_from_domain(lookup_addr)
-        except gaierror:
-            return False
+        return self.resolver.resolve_ipv4_from_domain(lookup_addr)
 
 
 class BlacklistChecker:

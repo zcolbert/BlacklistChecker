@@ -83,17 +83,20 @@ def lookup_domains():
     cfg = ConfigParser()
     cfg.read('config.ini')
 
-    domain_file = 'C:/Users/Zachary/Documents/IBW/Accounts/BIDX/domains.csv'
-    domains = load_domains_from_csv(domain_file)
+    #domain_file = 'C:/Users/Zachary/Documents/IBW/Accounts/BIDX/domains.csv'
+    #domains = load_domains_from_csv(domain_file)
 
     blacklists = load_blacklists_from_csv(cfg.get('BLACKLIST', 'Blacklists'))
 
     checker = BlacklistChecker(blacklists)
 
-    for d in domains:
-        lookup_domain(d, checker)
+    domain = Domain('savemydentalpractice.com')
+    lookup_domain(domain, checker)
 
-    create_csv_report(checker.get_listed_domains(), account_name='BIDX')
+    #for d in domains:
+    #    lookup_domain(d, checker)
+
+    #create_csv_report(checker.get_listed_domains(), account_name='BIDX')
 
 if __name__ == "__main__":
     lookup_domains()
