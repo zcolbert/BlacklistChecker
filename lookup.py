@@ -90,11 +90,10 @@ def lookup_domains():
 
     checker = BlacklistChecker(blacklists)
 
-    domain = Domain('savemydentalpractice.com')
-    lookup_domain(domain, checker)
+    domains = [Domain('financialconcepts4u.net')]
 
-    #for d in domains:
-    #    lookup_domain(d, checker)
+    for d in domains:
+        lookup_domain(d, checker)
 
     #create_csv_report(checker.get_listed_domains(), account_name='BIDX')
 

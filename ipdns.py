@@ -17,11 +17,11 @@ class DnsResolver:
         self.resolver = dns.resolver.Resolver()
 
     def resolve_record(self, domain, record_type):
-        """Returns the first result as a string"""
         try:
-            return self.resolver.query(domain, record_type)[0].to_text()
+            answers = self.resolver.query(domain, record_type)
+            return [rdata.to_text() for rdata in answers]
         except dns.resolver.NXDOMAIN:
-            return None
+            return list()
 
     def resolve_mx_from_domain(self, domain):
         return self.resolve_record(domain, 'MX')
@@ -34,6 +34,7 @@ class DnsResolver:
 
 def test():
     resolver = DnsResolver()
+    print(resolver.resolve_record('google.com', 'A'))
     print(resolver.resolve_ipv4_from_domain('google.com'))
     print(resolver.resolve_ipv4_from_domain('realtorhouseportraits.com'))
     print(resolver.resolve_mx_from_domain('realtorhouseportraits.com'))

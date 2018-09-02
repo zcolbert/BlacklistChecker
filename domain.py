@@ -1,7 +1,6 @@
 from socket import gaierror
 import re # regex for domain validation
 import ipdns
-import dns.resolver
 
 
 class Domain:
@@ -14,18 +13,19 @@ class Domain:
         return 'Domain<name="%s">' % self.name
 
     def get_ipv4(self):
-        return self.resolver.resolve_ipv4_from_domain(self.name)
+        ip_addrs = self.resolver.resolve_ipv4_from_domain(self.name)
+        return ip_addrs[0]
 
     def get_reverse_ipv4(self):
         """Reverse the octets of an IP address."""
         return ipdns.reverse_ipv4(self.get_ipv4())
 
     def is_active(self):
-        try:
-            self.get_ipv4()
-            return True
-        except gaierror:
-            return False
+        return self.get_ipv4() != ''
+
+    def has_mx_record(self):
+        mx = self.resolver.resolve_mx_from_domain(self.name)
+        return len(mx) > 0
 
 
 class DomainValidator:
