@@ -4,6 +4,7 @@ from ipdns import DnsResolver, IPAddress
 class Domain:
     def __init__(self, name):
         self._name = name
+        self._ipv4 = None
 
     def __repr__(self):
         return "Domain<name='{}'>".format(self.name)
@@ -21,12 +22,15 @@ class Domain:
 
     @property
     def ipv4_address(self):
-        resolver = DnsResolver()
-        ip_addrs = resolver.query(self.name, 'A')
-        if len(ip_addrs) > 0:
-            return IPAddress(ip_addrs[0])
-        else:
-            return IPAddress()
+        if self._ipv4 is None:
+            # lookup ipv4 address if not already known
+            resolver = DnsResolver()
+            ip_addrs = resolver.query(self.name, 'A')
+            if len(ip_addrs) > 0:
+                self._ipv4 = IPAddress(ip_addrs[0])
+            else:
+                self._ipv4 = IPAddress()
+        return self._ipv4
 
     def is_active(self):
         return self.ipv4_address != IPAddress()
@@ -50,6 +54,15 @@ class DomainStatus:
     @property
     def blacklists(self):
         return self.ip_listings.union(self.domain_listings)
+
+    def domain_is_listed(self):
+        return len(self.domain_listings) > 0
+
+    def ip_is_listed(self):
+        return len(self.ip_listings) > 0
+
+    def domain_is_online(self):
+        return self.domain.is_active()
 
     def add_blacklist(self, blacklist):
         if blacklist.query_type == 'IP Address':
