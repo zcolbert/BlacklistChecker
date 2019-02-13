@@ -21,9 +21,9 @@ class Domain:
         return self.name.split('.')[-1]
 
     @property
-    def ipv4_address(self):
-        if self._ipv4 is None:
-            # lookup ipv4 address if not already known
+    def ipv4_address(self, refresh=False):
+        if self._ipv4 is None or refresh == True:
+            # refresh ipv4 address value
             resolver = DnsResolver()
             ip_addrs = resolver.query(self.name, 'A')
             if len(ip_addrs) > 0:
