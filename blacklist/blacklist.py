@@ -54,13 +54,34 @@ class DomainBlacklist(Blacklist):
 class BlacklistChecker:
     def __init__(self, blacklists):
         self.resolver = DnsResolver()
-        self.blacklists = blacklists
+        self.blacklists = {}
+        self._init_blacklists(blacklists)
 
-    def query(self, domain):
+    def _init_blacklists(self, blacklists):
+        for bl in blacklists:
+            if not bl.query_type in self.blacklists:
+                self.blacklists[bl.query_type] = set()
+            self.blacklists[bl.query_type].add(bl)
+
+    def query(self, domain, type='all'):
         status = DomainStatus(domain)
-        for bl in self.blacklists:
-            listed = bl.query(domain)
+        if (type=='all' or type=='domain'):
+            self._query_domain_blacklists(status)
+        # Check IP blacklists only if domain is active
+        if (type == 'all' or type=='ip') and domain.is_active():
+            self._query_ip_blacklists(status)
+        return status
+
+    def _query_ip_blacklists(self, status):
+        for bl in self.blacklists['IP Address']:
+            listed = bl.query(status.domain)
             if listed:
                 status.add_blacklist(bl)
-        return status
+
+    def _query_domain_blacklists(self, status):
+        for bl in self.blacklists['Domain']:
+            listed = bl.query(status.domain)
+            if listed:
+                status.add_blacklist(bl)
+
 
