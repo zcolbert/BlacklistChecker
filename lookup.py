@@ -5,43 +5,34 @@
 # ===================================================================
 
 import csv
+import argparse
 from collections import OrderedDict
 from configparser import ConfigParser
+
 from domain import Domain
-from blacklist import IPBlacklist, DomainBlacklist, ListedDomain, BlacklistChecker
+from blacklist.blacklist import BlacklistChecker, DomainBlacklist, IPBlacklist
 
 
-def load_domains_from_csv(filename, status='', key='Domain'):
+def load_domains_from_csv(filename, status='', delimiter=',', domain_field='Domain'):
     with open(filename, 'r') as srcfile:
-        reader = csv.DictReader(srcfile)
+        reader = csv.DictReader(srcfile, delimiter=delimiter)
         if status != '':
-            return [Domain(row[key]) for row in reader if row['Status' == status]]
+            return [Domain(row[domain_field]) for row in reader if row['Status' == status]]
         else:
-            return [Domain(row[key]) for row in reader]
+            return [Domain(row[domain_field]) for row in reader if row[domain_field] != '']
 
 
-def load_domains_from_excel(filename, status='', key='Domain'):
-    pass
-
-
-def lookup_domain(domain, checker):
+def print_blacklist_report(listed_domain, blacklists):
     print('=' * 48)
-    print('{} ({})'.format(
-        domain.name, domain.get_ipv4()))
+    print('{domain} ({ip})'.format(
+        domain=listed_domain.name, ip=listed_domain.get_ipv4()
+    ))
     print('{:-<48}'.format(''))
-    if domain.is_active():
-        checker.check_against_all_blacklists(domain)
-
-        if checker.domain_is_listed(domain):
-            results = checker.get_listing_info(domain)
-            for r in results:
-                print('{:<12} @ {:<32}'.format(
-                    r.query_type, r.alias
-                ))
-            print()
-            print('TOTAL LISTINGS:', len(results))
-    else:
-        print('Domain is inactive.')
+    for b in blacklists:
+        print('{:<12} @ {:<32}'.format(
+            b.query_type, b.alias
+        ))
+    print('\nTOTAL LISTINGS: {}'.format(len(blacklists)))
     print('=' * 48)
     print()
 
@@ -78,24 +69,50 @@ def create_csv_report(listed_domains, account_name=''):
             writer.writerow(row)
 
 
+def lookup_domain(domain, checker):
+    if domain.is_active():
+        result = checker.query(domain)
+        print(domain, result)
+    else:
+        print('{domain} is inactive.'.format(domain=domain.name))
+
+
 def lookup_domains():
 
     cfg = ConfigParser()
     cfg.read('config.ini')
 
-    #domain_file = 'C:/Users/Zachary/Documents/IBW/Accounts/BIDX/domains.csv'
-    #domains = load_domains_from_csv(domain_file)
-
     blacklists = load_blacklists_from_csv(cfg.get('BLACKLIST', 'Blacklists'))
-
     checker = BlacklistChecker(blacklists)
+    domains = load_domains_from_csv('C:/Users/Zachary/Desktop/servers.csv', delimiter=',')
 
-    domains = [Domain('financialconcepts4u.net')]
+    for domain in domains:
+        lookup_domain(domain, checker)
 
-    for d in domains:
-        lookup_domain(d, checker)
+    #create_csv_report(checker.get_listed_domains())
 
-    #create_csv_report(checker.get_listed_domains(), account_name='BIDX')
+
+def get_args():
+
+    parser = argparse.ArgumentParser(description='Check domain or IP against blacklists')
+
+    parser.add_argument('domain')
+    parser.add_argument('-i', '--ip-address', action='store_true', default=False, dest='lookup_ip')
+    parser.add_argument('-d', '--domain-name', action='store_true', default=False, dest='lookup_domain')
+    # -f --file
+
+    args = parser.parse_args()
+
+    domain = args.domain
+    if args.lookup_ip:
+        print('Looking up IP')
+    elif args.lookup_domain:
+        print('Looking up domain')
+    else:
+        print('Looking up all')
+
+
+
 
 if __name__ == "__main__":
     lookup_domains()

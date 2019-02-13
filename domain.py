@@ -1,66 +1,55 @@
-from socket import gaierror
-import re # regex for domain validation
-import ipdns
+from ipdns import DnsResolver, IPAddress
 
 
 class Domain:
-    def __init__(self, domain_str):
-        self.resolver = ipdns.DnsResolver()
-        self.name = domain_str
-        self.tld = self.name.split('.')[-1]
+    def __init__(self, name):
+        self._name = name
 
     def __repr__(self):
-        return 'Domain<name="%s">' % self.name
+        return "Domain<name='{}'>".format(self.name)
 
-    def get_ipv4(self):
-        ip_addrs = self.resolver.resolve_ipv4_from_domain(self.name)
-        return ip_addrs[0]
+    def __str__(self):
+        return self.name
 
-    def get_reverse_ipv4(self):
-        """Reverse the octets of an IP address."""
-        return ipdns.reverse_ipv4(self.get_ipv4())
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def tld(self):
+        return self.name.split('.')[-1]
+
+    @property
+    def ipv4_address(self):
+        resolver = DnsResolver()
+        ip_addrs = resolver.query(self.name, 'A')
+        if len(ip_addrs) > 0:
+            return IPAddress(ip_addrs[0])
+        else:
+            return IPAddress()
 
     def is_active(self):
-        return self.get_ipv4() != ''
-
-    def has_mx_record(self):
-        mx = self.resolver.resolve_mx_from_domain(self.name)
-        return len(mx) > 0
+        return self.ipv4_address != IPAddress()
 
 
-class DomainValidator:
-    def __init__(self, valid_tlds):
-        self.resolver = ipdns.DnsResolver()
-        self.tld_validator = TLDValidator(valid_tlds)
-        self.valid_domain_char_regex = re.compile(
-            # Valid chars: a-z, A-Z, 0-9, '-'
-            # Cannot begin or end with '-', cannot be only numeric
-            '^[a-zA-Z0-9]*[a-zA-Z]+[a-zA-Z0-9]*[a-zA-Z0-9]$'
-        )
+class DomainStatus:
+    def __init__(self, domain):
+        self.domain = domain
+        self.status = ''
+        self.ip_listings = set()
+        self.domain_listings = set()
 
-    def domain_is_valid(self, domain_str):
-        """Return True if domain is properly formatted,
-        and contains a valid top level domain name."""
-        domain = Domain(domain_str)
-        return (self.tld_is_valid(domain.tld)
-                and self.format_is_valid(domain.tld))
+    def __repr__(self):
+        msg = "DomainStatus<domain='{}', status='{}'"
+        return msg.format(self.domain, self.status)
 
-    def tld_is_valid(self, tld):
-        return self.tld_validator.tld_is_valid(tld)
-
-    def format_is_valid(self, domain):
-        if len(domain) < 3 or len(domain) > 63:
-            return False
-        result = self.valid_domain_char_regex.search(domain)
-        return result is not None
-
-
-class TLDValidator:
-    def __init__(self, valid_tlds):
-        self.valid_tlds = valid_tlds
-
-    def tld_is_valid(self, tld):
-        if tld == '':
-            return False
-        return tld.upper() in self.valid_tlds
+    def add_blacklist(self, blacklist):
+        if blacklist.query_type == 'IP Address':
+            self.ip_listings.add(blacklist)
+        elif blacklist.query_type == 'Domain':
+            self.domain_listings.add(blacklist)
+        else:
+            msg = 'Unknown blacklist type: {}'
+            raise ValueError(msg.format(blacklist.query_type))
+        self.status = 'Listed'
 
