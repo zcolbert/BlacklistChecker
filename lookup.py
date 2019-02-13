@@ -9,7 +9,7 @@ import argparse
 from collections import OrderedDict
 from configparser import ConfigParser
 
-from domain import Domain
+from domain import Domain, DomainStatus
 from blacklist.blacklist import BlacklistChecker, DomainBlacklist, IPBlacklist
 
 
@@ -22,17 +22,17 @@ def load_domains_from_csv(filename, status='', delimiter=',', domain_field='Doma
             return [Domain(row[domain_field]) for row in reader if row[domain_field] != '']
 
 
-def print_blacklist_report(listed_domain, blacklists):
+def print_blacklist_report(status):
     print('=' * 48)
+    domain = status.domain
     print('{domain} ({ip})'.format(
-        domain=listed_domain.name, ip=listed_domain.get_ipv4()
-    ))
+        domain=domain.name, ip=domain.ipv4_address))
     print('{:-<48}'.format(''))
-    for b in blacklists:
+    for b in status.blacklists:
         print('{:<12} @ {:<32}'.format(
             b.query_type, b.alias
         ))
-    print('\nTOTAL LISTINGS: {}'.format(len(blacklists)))
+    print('\nTOTAL LISTINGS: {}'.format(len(status.blacklists)))
     print('=' * 48)
     print()
 
@@ -71,10 +71,9 @@ def create_csv_report(listed_domains, account_name=''):
 
 def lookup_domain(domain, checker):
     if domain.is_active():
-        result = checker.query(domain)
-        print(domain, result)
+        return checker.query(domain)
     else:
-        print('{domain} is inactive.'.format(domain=domain.name))
+        return DomainStatus(domain, status='Offline')
 
 
 def lookup_domains():
@@ -87,7 +86,8 @@ def lookup_domains():
     domains = load_domains_from_csv('C:/Users/Zachary/Desktop/servers.csv', delimiter=',')
 
     for domain in domains:
-        lookup_domain(domain, checker)
+        result = lookup_domain(domain, checker)
+        print_blacklist_report(result)
 
     #create_csv_report(checker.get_listed_domains())
 

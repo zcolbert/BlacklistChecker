@@ -33,15 +33,23 @@ class Domain:
 
 
 class DomainStatus:
-    def __init__(self, domain):
-        self.domain = domain
-        self.status = ''
+    def __init__(self, domain, status='Online'):
+        self._domain = domain
+        self.status = status
         self.ip_listings = set()
         self.domain_listings = set()
 
     def __repr__(self):
-        msg = "DomainStatus<domain='{}', status='{}'"
+        msg = "DomainStatus<domain='{}', status='{}'>"
         return msg.format(self.domain, self.status)
+
+    @property
+    def domain(self):
+        return self._domain
+
+    @property
+    def blacklists(self):
+        return self.ip_listings.union(self.domain_listings)
 
     def add_blacklist(self, blacklist):
         if blacklist.query_type == 'IP Address':
@@ -52,4 +60,5 @@ class DomainStatus:
             msg = 'Unknown blacklist type: {}'
             raise ValueError(msg.format(blacklist.query_type))
         self.status = 'Listed'
+
 
