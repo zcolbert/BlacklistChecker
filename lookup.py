@@ -10,7 +10,8 @@ from collections import OrderedDict
 from configparser import ConfigParser
 
 from domain import Domain, DomainStatus
-from blacklist.blacklist import BlacklistChecker, DomainBlacklist, IPBlacklist
+from blacklist.blacklist import BlacklistChecker, Blacklist
+from blacklist.blacklist import create_blacklist
 
 
 def load_domains_from_csv(filename, status='', delimiter=',', domain_field='Domain'):
@@ -42,19 +43,15 @@ def print_blacklist_report(status):
 
 
 def load_blacklists_from_csv(filename):
-    lists = []
+    blacklists = []
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile)
         for row in reader:
             zone = row['Query Zone']
             list_type = row['Query Type']
-            if list_type == 'Domain':
-                lists.append(DomainBlacklist(zone, alias=row['Alias']))
-            elif list_type == 'IP Address':
-                lists.append(IPBlacklist(zone, alias=row['Alias']))
-            else:
-                continue
-    return lists
+            alias = row['Alias']
+            blacklists.append(create_blacklist(list_type, zone, alias))
+    return blacklists
 
 
 def create_csv_report(results, account_name=''):

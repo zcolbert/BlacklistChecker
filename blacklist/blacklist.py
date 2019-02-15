@@ -1,54 +1,28 @@
-from abc import ABC, abstractmethod
+from enum import Enum
+
 from ipdns import DnsResolver
 from domain import DomainStatus
 
 
-class Blacklist(ABC):
-    def __init__(self, query_zone, alias=''):
-        self.resolver = DnsResolver()
-        self.query_zone = query_zone
-        self.query_type = ''
-        self.alias = alias
-        self.description = ''
-        self.delisting = ''
-        self.return_codes = {}
-
-    @abstractmethod
-    def query(self, domain):
-        pass
+class BlacklistType(Enum):
+    IP_ADDRESS = "IP Address"
+    DOMAIN = "Domain"
 
 
-class IPBlacklist(Blacklist):
-    def __init__(self, query_zone, alias=''):
-        Blacklist.__init__(self, query_zone, alias)
-        self.query_type = 'IP Address'
+def create_blacklist(type, zone, alias):
+    """Factory function to initialize Blacklists"""
+    return Blacklist(type, zone, alias)
 
-    def __repr__(self):
-        msg = "IPBlacklist<alias='{alias}' query_zone='{zone}'>"
-        return msg.format(alias=self.alias, zone=self.query_zone)
 
-    def query(self, domain):
+def get_lookup_string(bltype, domain, query_zone):
+    if bltype == BlacklistType.IP_ADDRESS:
         reversed_ip = domain.ipv4_address.reverse()
-        lookup_addr = '{ip}.{zone}'.format(
-            ip=reversed_ip,
-            zone=self.query_zone)
-        result = self.resolver.query(lookup_addr, 'A')
-        return result != self.resolver.norecord
-
-
-class DomainBlacklist(Blacklist):
-    def __init__(self, query_zone, alias=''):
-        Blacklist.__init__(self, query_zone, alias)
-        self.query_type = 'Domain'
-
-    def __repr__(self):
-        msg = "DomainBlacklist<alias='{alias}' query_zone='{zone}'>"
-        return msg.format(alias=self.alias, zone=self.query_zone)
-
-    def query(self, domain):
-        lookup_addr = domain.name + '.' + self.query_zone
-        result = self.resolver.query(lookup_addr, 'A')
-        return result != self.resolver.norecord
+        return reversed_ip + '.' + query_zone
+    elif bltype == BlacklistType.DOMAIN:
+        return domain.name + '.' + query_zone
+    else:
+        msg = "Unknown blacklist type: '{}'"
+        raise ValueError(msg.format(bltype))
 
 
 class BlacklistChecker:
@@ -84,4 +58,30 @@ class BlacklistChecker:
             if listed:
                 status.add_blacklist(bl)
 
+
+class Blacklist:
+    def __init__(self, query_type, query_zone, alias=''):
+        self.query_type = query_type
+        self.query_zone = query_zone
+        self.alias = alias
+        self.resolver = DnsResolver()
+
+    def __repr__(self):
+        msg = "Blacklist<type='{}', alias='{}', query_zone='{}'>"
+        return msg.format(self.query_type.value, self.alias, self.query_zone)
+
+    def get_lookup_string(self, domain):
+        if self.query_type == BlacklistType.IP_ADDRESS.value:
+            reversed_ip = domain.ipv4_address.reverse()
+            return reversed_ip + '.' + self.query_zone
+        elif self.query_type == BlacklistType.DOMAIN.value:
+            return domain.name + '.' + self.query_zone
+        else:
+            msg = "Unknown blacklist type: '{}'"
+            raise ValueError(msg.format(self.query_type))
+
+    def query(self, domain):
+        lookup_addr = self.get_lookup_string(domain)
+        result = self.resolver.query(lookup_addr, 'A')
+        return result != self.resolver.norecord
 
