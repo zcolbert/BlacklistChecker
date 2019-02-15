@@ -10,7 +10,7 @@ from collections import OrderedDict
 from configparser import ConfigParser
 
 from domain import Domain, DomainStatus
-from blacklist.blacklist import BlacklistChecker, Blacklist
+from blacklist.blacklist import BlacklistChecker
 from blacklist.blacklist import create_blacklist
 
 
