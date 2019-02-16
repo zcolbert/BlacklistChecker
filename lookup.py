@@ -10,8 +10,9 @@ from collections import OrderedDict
 from configparser import ConfigParser
 
 from domain import Domain, DomainStatus
-from blacklist.blacklist import BlacklistChecker
+from blacklist.checker import BlacklistChecker
 from blacklist.blacklist import create_blacklist
+from blacklist.blacklist import BlacklistType
 
 
 def load_domains_from_csv(filename, status='', delimiter=',', domain_field='Domain'):
@@ -50,7 +51,11 @@ def load_blacklists_from_csv(filename):
             zone = row['Query Zone']
             list_type = row['Query Type']
             alias = row['Alias']
-            blacklists.append(create_blacklist(list_type, zone, alias))
+            try:
+                blacklists.append(create_blacklist(list_type, zone, alias))
+            except KeyError:
+                # Unknown blacklist type. Skip this record
+                continue
     return blacklists
 
 
@@ -81,7 +86,7 @@ def create_csv_report(results, account_name=''):
 
 def lookup_domain(domain, checker):
     if domain.is_active():
-        return checker.query(domain)
+        return checker.query(domain, BlacklistType.ALL)
     else:
         return DomainStatus(domain, status='Offline')
 
