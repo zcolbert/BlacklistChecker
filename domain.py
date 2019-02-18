@@ -1,4 +1,4 @@
-from ipdns import DnsResolver, IPAddress
+from ipdns import get_ipv4_address
 
 
 class Domain:
@@ -14,32 +14,29 @@ class Domain:
 
     @property
     def name(self):
+        """Return the domain name"""
         return self._name
 
     @property
     def tld(self):
+        """Return the top level domain name"""
         return self.name.split('.')[-1]
 
     @property
     def ipv4_address(self, refresh=False):
+        """Return ipv4 address"""
         if self._ipv4 is None or refresh == True:
-            # refresh ipv4 address value
-            resolver = DnsResolver()
-            ip_addrs = resolver.query(self.name, 'A')
-            if len(ip_addrs) > 0:
-                self._ipv4 = IPAddress(ip_addrs[0])
-            else:
-                self._ipv4 = IPAddress()
+            # query domain to get refreshed IPAddress
+            self._ipv4 = get_ipv4_address(self.name)
         return self._ipv4
 
     def is_active(self):
-        return self.ipv4_address != IPAddress()
+        return self.ipv4_address.online()
 
 
 class DomainStatus:
-    def __init__(self, domain, status='Online'):
-        self._domain = domain
-        self.status = status
+    def __init__(self, domain):
+        self._domain = Domain(domain)
         self.ip_listings = set()
         self.domain_listings = set()
 
@@ -61,7 +58,7 @@ class DomainStatus:
     def ip_is_listed(self):
         return len(self.ip_listings) > 0
 
-    def domain_is_online(self):
+    def domain_is_active(self):
         return self.domain.is_active()
 
     def add_blacklist(self, blacklist):
@@ -73,5 +70,3 @@ class DomainStatus:
             msg = 'Unknown blacklist type: {}'
             raise ValueError(msg.format(blacklist.query_type))
         self.status = 'Listed'
-
-
