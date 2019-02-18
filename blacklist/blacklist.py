@@ -39,10 +39,6 @@ class Blacklist(ABC):
     def query_zone(self):
         return self._query_zone
 
-    def __repr__(self):
-        msg = "Blacklist<type='{}', alias='{}', query_zone='{}'>"
-        return msg.format(self.query_type.value, self.alias, self.query_zone)
-
     @abstractmethod
     def _get_lookup_string(self, domain):
         """Return a string used to query the blacklist"""
@@ -60,6 +56,10 @@ class IPBlacklist(Blacklist):
         Blacklist.__init__(self, query_zone, alias)
         self._query_type = BlacklistType.IP_ADDRESS
 
+    def __repr__(self):
+        msg = "IPBlacklist<alias='{}', query_zone='{}'>"
+        return msg.format(self.alias, self.query_zone)
+
     def _get_lookup_string(self, domain):
         reversed_ip = domain.ipv4_address.reverse()
         return reversed_ip + '.' + self.query_zone
@@ -70,6 +70,10 @@ class DomainBlacklist(Blacklist):
     def __init__(self, query_zone, alias=''):
         Blacklist.__init__(self, query_zone, alias)
         self._query_type = BlacklistType.DOMAIN
+
+    def __repr__(self):
+        msg = "DomainBlacklist<alias='{}', query_zone='{}'>"
+        return msg.format(self.alias, self.query_zone)
 
     def _get_lookup_string(self, domain):
         return domain.name + '.' + self.query_zone
