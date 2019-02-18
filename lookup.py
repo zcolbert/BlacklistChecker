@@ -14,7 +14,7 @@ from blacklist.blacklist import create_blacklist
 from blacklist.checker import BlacklistChecker
 
 
-def load_domains_from_csv(filename, domain_field='Domain', delimiter=','):
+def load_domains_from_csv(filename, domain_field, delimiter=','):
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile, delimiter=delimiter)
         return [row[domain_field] for row in reader if row[domain_field] != '']
@@ -89,9 +89,13 @@ def lookup_domains():
     cfg = ConfigParser()
     cfg.read('config.ini')
 
-    blacklists = load_blacklists_from_csv(cfg.get('BLACKLIST', 'Blacklists'))
+    blacklists = load_blacklists_from_csv(
+        cfg.get('BLACKLIST', 'Blacklists'))
     checker = BlacklistChecker(blacklists)
-    domains = load_domains_from_csv('C:/Users/Zachary/Desktop/servers.csv', delimiter=',')
+    domains = load_domains_from_csv(
+        cfg.get('DOMAINS', 'TestFilePath'),
+        cfg.get('DOMAINS', 'Fieldname'),
+        cfg.get('DOMAINS', 'Delimiter'))
 
     results = []
     for domain in domains:
