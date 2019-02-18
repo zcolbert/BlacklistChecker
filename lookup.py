@@ -4,15 +4,14 @@
 # Purpose:      Lookup blacklist status of a single domain.
 # ===================================================================
 
-import csv
 import argparse
+import csv
 from collections import OrderedDict
 from configparser import ConfigParser
 
-from domain import Domain, DomainStatus
-from blacklist.checker import BlacklistChecker
-from blacklist.blacklist import create_blacklist
 from blacklist.blacklist import BlacklistType
+from blacklist.blacklist import create_blacklist
+from blacklist.checker import BlacklistChecker
 
 
 def load_domains_from_csv(filename, domain_field='Domain', delimiter=','):

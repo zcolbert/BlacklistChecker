@@ -2,11 +2,11 @@ from abc import ABC
 from abc import abstractmethod
 from enum import Enum
 
-
-from ipdns import DnsResolver
+from dnstools.resolver import DnsResolver
 
 
 class BlacklistType(Enum):
+    """Enumeration of valid Blacklist types"""
     ALL = 'all'
     IP_ADDRESS = 'IP Address'
     DOMAIN = 'Domain'
@@ -24,6 +24,7 @@ def create_blacklist(bltype, qzone, alias):
 
 
 class Blacklist(ABC):
+    """Abstract base class for Blacklists"""
     def __init__(self, query_zone, alias=''):
         self._query_type = BlacklistType
         self._query_zone = query_zone
@@ -54,6 +55,7 @@ class Blacklist(ABC):
 
 
 class IPBlacklist(Blacklist):
+    """Represents an IP Blacklist"""
     def __init__(self, query_zone, alias=''):
         Blacklist.__init__(self, query_zone, alias)
         self._query_type = BlacklistType.IP_ADDRESS
@@ -64,6 +66,7 @@ class IPBlacklist(Blacklist):
 
 
 class DomainBlacklist(Blacklist):
+    """Represents a Domain Blacklist"""
     def __init__(self, query_zone, alias=''):
         Blacklist.__init__(self, query_zone, alias)
         self._query_type = BlacklistType.DOMAIN

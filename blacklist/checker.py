@@ -1,11 +1,11 @@
-from ipdns import DnsResolver
-from domain import DomainStatus
 from blacklist.blacklist import BlacklistType
+from dnstools.domain import DomainStatus
+from dnstools.resolver import DnsResolver
 
 
 class BlacklistChecker:
     def __init__(self, blacklists):
-        self.resolver = DnsResolver()
+        self.resolver = DnsResolver() # TODO remove
         self.blacklists = {}
         self._init_blacklists(blacklists)
 

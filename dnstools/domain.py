@@ -1,4 +1,4 @@
-from ipdns import get_ipv4_address
+from dnstools.ipaddress import get_ipv4_address
 
 
 class Domain:
