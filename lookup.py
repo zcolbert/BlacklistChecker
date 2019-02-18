@@ -15,13 +15,10 @@ from blacklist.blacklist import create_blacklist
 from blacklist.blacklist import BlacklistType
 
 
-def load_domains_from_csv(filename, status='', delimiter=',', domain_field='Domain'):
+def load_domains_from_csv(filename, domain_field='Domain', delimiter=','):
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile, delimiter=delimiter)
-        if status != '':
-            return [Domain(row[domain_field]) for row in reader if row['Status' == status]]
-        else:
-            return [Domain(row[domain_field]) for row in reader if row[domain_field] != '']
+        return [row[domain_field] for row in reader if row[domain_field] != '']
 
 
 def print_blacklist_report(status):
@@ -53,7 +50,7 @@ def load_blacklists_from_csv(filename):
             alias = row['Alias']
             try:
                 blacklists.append(create_blacklist(list_type, zone, alias))
-            except KeyError:
+            except ValueError:
                 # Unknown blacklist type. Skip this record
                 continue
     return blacklists
@@ -73,7 +70,7 @@ def create_csv_report(results, account_name=''):
             row = OrderedDict()
             row['Domain'] = r.domain.name
 
-            if r.domain.is_active():
+            if r.domain_is_active():
                 row['IP Address'] = r.domain.ipv4_address
             else:
                 row['IP Address'] = 'Offline'
@@ -85,10 +82,7 @@ def create_csv_report(results, account_name=''):
 
 
 def lookup_domain(domain, checker):
-    if domain.is_active():
-        return checker.query(domain, BlacklistType.ALL)
-    else:
-        return DomainStatus(domain, status='Offline')
+    return checker.query(domain, BlacklistType.ALL)
 
 
 def lookup_domains():
