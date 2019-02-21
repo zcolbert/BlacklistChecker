@@ -4,6 +4,7 @@
 # Purpose:      Lookup blacklist status of a single domain.
 # ===================================================================
 
+import os
 import argparse
 import csv
 from collections import OrderedDict
@@ -18,25 +19,6 @@ def load_domains_from_csv(filename, domain_field, delimiter=','):
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile, delimiter=delimiter)
         return [row[domain_field] for row in reader if row[domain_field] != '']
-
-
-def print_blacklist_report(status):
-    print('=' * 48)
-    domain = status.domain
-    if domain.is_active():
-        ip = domain.ipv4_address
-    else:
-        ip = "Offline"
-    print('{domain} ({ip})'.format(domain=domain.name, ip=ip))
-    print('{:-<48}'.format(''))
-
-    for b in status.blacklists:
-        print('{:<12} @ {:<32}'.format(
-            b.query_type, b.alias
-        ))
-    print('\nTOTAL LISTINGS: {}'.format(len(status.blacklists)))
-    print('=' * 48)
-    print()
 
 
 def load_blacklists_from_csv(filename):
@@ -55,9 +37,9 @@ def load_blacklists_from_csv(filename):
     return blacklists
 
 
-def create_csv_report(results, account_name=''):
+def create_csv_report(results, save_location):
     fieldnames = ['Domain', 'IP Address', 'Domain Status', 'IP Status']
-    filename = '_'.join((account_name, 'Listed_Report.csv')).strip('_')
+    filename = os.path.join(save_location, 'Listed_Report.csv')
 
     print('Creating', filename, '... ', end='')
 
@@ -80,52 +62,64 @@ def create_csv_report(results, account_name=''):
     print('Done.')
 
 
-def lookup_domain(domain, checker):
-    return checker.query(domain, BlacklistType.ALL)
+def lookup(domains, checker):
+    results = []
+    for domain in domains:
+        print('Checking', domain, '...')
+        result = checker.query(domain, BlacklistType.ALL)
+        results.append(result)
+    return results
 
 
-def lookup_domains():
+def get_args():
+    parser = argparse.ArgumentParser(
+        description='Check domain or IP against blacklists')
+
+    parser.add_argument('-d', '--domain')
+    parser.add_argument('-f', '--filename')
+    parser.add_argument('-c', '--column')
+    parser.add_argument('-r', '--report')
+
+    return parser.parse_args()
+
+
+def init_domains(args, cfg):
+    if args.domain:
+        # lookup domain specified
+        domains = [args.domain]
+    elif args.filename:
+        # lookup domains from file specified
+        domains = load_domains_from_csv(
+            args.filename, args.column)
+    else:
+        # load domains from default file location
+        domains = load_domains_from_csv(
+            cfg.get('DOMAINS', 'TestFilePath'),
+            cfg.get('DOMAINS', 'Fieldname'),
+            cfg.get('DOMAINS', 'Delimiter'))
+    return domains
+
+
+def main():
 
     cfg = ConfigParser()
     cfg.read('config.ini')
 
+    args = get_args()
+
+    domains = init_domains(args, cfg)
     blacklists = load_blacklists_from_csv(
         cfg.get('BLACKLIST', 'Blacklists'))
     checker = BlacklistChecker(blacklists)
-    domains = load_domains_from_csv(
-        cfg.get('DOMAINS', 'TestFilePath'),
-        cfg.get('DOMAINS', 'Fieldname'),
-        cfg.get('DOMAINS', 'Delimiter'))
 
-    results = []
-    for domain in domains:
-        print('Checking', domain, '...')
-        results.append(lookup_domain(domain, checker))
+    results = lookup(domains, checker)
 
-    create_csv_report(results)
-
-
-def get_args():
-
-    parser = argparse.ArgumentParser(description='Check domain or IP against blacklists')
-
-    parser.add_argument('domain')
-    parser.add_argument('-i', '--ip-address', action='store_true', default=False, dest='lookup_ip')
-    parser.add_argument('-d', '--domain-name', action='store_true', default=False, dest='lookup_domain')
-    # -f --file
-
-    args = parser.parse_args()
-
-    domain = args.domain
-    if args.lookup_ip:
-        print('Looking up IP')
-    elif args.lookup_domain:
-        print('Looking up domain')
+    if args.report:
+        save_location = args.report
     else:
-        print('Looking up all')
-
-
+        save_location = cfg.get('FILES', 'ReportSaveLocation')
+    create_csv_report(results, save_location)
 
 
 if __name__ == "__main__":
-    lookup_domains()
+    main()
