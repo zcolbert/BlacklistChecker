@@ -31,7 +31,7 @@ class Domain:
         return self._ipv4
 
     def is_active(self):
-        return self.ipv4_address.online()
+        return self.ipv4_address.is_active()
 
 
 class DomainStatus:
