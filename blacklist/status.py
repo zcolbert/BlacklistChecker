@@ -37,9 +37,6 @@ class DomainStatus:
     def ip_is_listed(self) -> bool:
         return len(self.ip_listings) > 0
 
-    def domain_is_active(self) -> bool:
-        return self.domain.is_active()
-
     def add_blacklist(self, blacklist: Blacklist):
         if blacklist.query_type == 'IP Address':
             self.ip_listings.add(blacklist)
