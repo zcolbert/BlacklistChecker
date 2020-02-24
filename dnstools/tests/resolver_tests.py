@@ -9,17 +9,17 @@ class DnsResolverTest(unittest.TestCase):
 
     def test_query_empty_domain_returns_empty_list(self):
         domain = ''
-        answer = self.resolver.query_ipv4_from_domain(domain)
+        answer = self.resolver.query_ipv4_from_host(domain)
         self.assertListEqual(answer, [])
 
     def test_query_invalid_domain_returns_empty_list(self):
         domain = 'notarealdomain.somefaketld'
-        answer = self.resolver.query_ipv4_from_domain(domain)
+        answer = self.resolver.query_ipv4_from_host(domain)
         self.assertListEqual(answer, [])
 
     def test_query_live_domain_returns_list_of_ip_addresses(self):
         domain = 'google.com'
-        answer = self.resolver.query_ipv4_from_domain(domain)
+        answer = self.resolver.query_ipv4_from_host(domain)
         self.assertNotEqual(answer, [])
 
     def test_host_is_active_returns_true_with_active_domain(self):

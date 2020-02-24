@@ -25,8 +25,11 @@ class DnsResolver:
             # lookup returned no result
             return self.norecord
 
-    def query_ipv4_from_domain(self, domain: str) -> List[str]:
+    def query_ipv4_from_host(self, domain: str) -> List[str]:
         return self.query(domain, record_type='a')
+
+    def host_is_active(self, hostname: str) -> bool:
+        return self.query_ipv4_from_host(hostname) != list()
 
     def ip_is_active(self, ip_address) -> bool:
         try:
@@ -34,7 +37,3 @@ class DnsResolver:
             return True
         except socket.herror as err:
             return False
-
-    def host_is_active(self, hostname: str) -> bool:
-        return self.query_ipv4_from_domain(hostname) != list()
-
