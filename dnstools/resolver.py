@@ -1,4 +1,6 @@
+from typing import List
 import dns.resolver
+import socket
 
 
 class DnsResolver:
@@ -9,7 +11,7 @@ class DnsResolver:
     def norecord(self):
         return list()
 
-    def query(self, domain_name, record_type):
+    def query(self, domain_name: str, record_type: str) -> List[str]:
         try:
             answers = self._resolver.query(domain_name, record_type)
             return [rdata.to_text() for rdata in answers]
@@ -22,4 +24,17 @@ class DnsResolver:
                 dns.resolver.Timeout) as err:
             # lookup returned no result
             return self.norecord
+
+    def query_ipv4_from_domain(self, domain: str) -> List[str]:
+        return self.query(domain, record_type='a')
+
+    def ip_is_active(self, ip_address) -> bool:
+        try:
+            socket.gethostbyaddr(ip_address)
+            return True
+        except socket.herror as err:
+            return False
+
+    def host_is_active(self, hostname: str) -> bool:
+        return self.query_ipv4_from_domain(hostname) != list()
 
