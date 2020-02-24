@@ -35,6 +35,12 @@ class DnsResolverTest(unittest.TestCase):
         ip = '203.0.113.0'  # invalid IP - RFC 5737
         self.assertFalse(dnstools.ip_is_active(ip))
 
+    def test_reverse_ipv4_octets_returns_octets_in_reversed_order(self):
+        address = '001.002.003.004'
+        expected = '004.003.002.001'
+        reversed_ip = dnstools.reverse_ipv4_octets(address)
+        self.assertEqual(reversed_ip, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

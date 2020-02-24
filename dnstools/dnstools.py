@@ -34,3 +34,8 @@ def ip_is_active(ip_address: str) -> bool:
         return True
     except socket.herror as err:
         return False
+
+
+def reverse_ipv4_octets(ipv4: str) -> str:
+    """Reverse octets of ipv4 address, return as a string"""
+    return '.'.join(reversed(ipv4.split('.')))
