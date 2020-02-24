@@ -34,7 +34,7 @@ class IPv4Address:
 def get_ipv4_address(domain) -> IPv4Address:
     """Factory function to initialize IPAddress"""
     resolver = DnsResolver()
-    domain_ips = resolver.query(domain, 'A')
+    domain_ips = resolver.query_ipv4_from_host(domain)
     if len(domain_ips) > 0:
         ip_addr = domain_ips[0]
     else:
