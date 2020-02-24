@@ -1,5 +1,5 @@
 from blacklist.blacklist import BlacklistType
-from dnstools.domain import DomainStatus
+from blacklist.status import DomainStatus
 
 
 class BlacklistChecker:
@@ -19,6 +19,7 @@ class BlacklistChecker:
             self._query_all(status)
         else:
             self._query_lists(status, type)
+        status.checked = True
         return status
 
     def _query_all(self, status):
@@ -31,4 +32,3 @@ class BlacklistChecker:
             listed = bl.query(status.domain)
             if listed:
                 (status.add_blacklist(bl))
-
