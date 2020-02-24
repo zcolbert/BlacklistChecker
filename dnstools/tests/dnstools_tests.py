@@ -1,18 +1,19 @@
 import unittest
 import dnstools
+from dnstools import exception
 
 
 class DnsResolverTest(unittest.TestCase):
 
-    def test_query_empty_domain_returns_empty_list(self):
+    def test_query_empty_domain_raises_EmptyHostError(self):
         domain = ''
-        answer = dnstools.query_ipv4_from_host(domain)
-        self.assertListEqual(answer, [])
+        with self.assertRaises(dnstools.exception.EmptyHostError):
+            dnstools.query_ipv4_from_host(domain)
 
-    def test_query_invalid_domain_returns_empty_list(self):
+    def test_query_invalid_domain_raises_HostError(self):
         domain = 'notarealdomain.somefaketld'
-        answer = dnstools.query_ipv4_from_host(domain)
-        self.assertListEqual(answer, [])
+        with self.assertRaises(dnstools.exception.HostError):
+            dnstools.query_ipv4_from_host(domain)
 
     def test_query_live_domain_returns_list_of_ip_addresses(self):
         domain = 'google.com'

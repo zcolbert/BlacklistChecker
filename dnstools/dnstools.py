@@ -1,6 +1,7 @@
 from typing import List
 
 import dns.resolver
+import dnstools.exception
 import socket
 
 
@@ -20,12 +21,21 @@ def query(domain_name: str, record_type: str) -> List[str]:
         return list()
 
 
-def query_ipv4_from_host(domain: str) -> List[str]:
-    return query(domain, record_type='a')
+def query_ipv4_from_host(domain: str) -> str:
+    if domain == '':
+        raise dnstools.exception.EmptyHostError()
+    result = query(domain, record_type='a')
+    if len(result) > 0:
+        return result[0]
+    raise dnstools.exception.HostError()
 
 
 def host_is_active(hostname: str) -> bool:
-    return query_ipv4_from_host(hostname) != list()
+    try:
+        query_ipv4_from_host(hostname)
+        return True
+    except dnstools.exception.HostError:
+        return False
 
 
 def ip_is_active(ip_address: str) -> bool:
