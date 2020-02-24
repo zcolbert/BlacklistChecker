@@ -1,0 +1,1 @@
+from dnstools.dnstools import *
