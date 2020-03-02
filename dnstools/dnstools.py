@@ -30,13 +30,13 @@ def query(domain_name: str, record_type: str) -> List[str]:
         return list()
 
 
-def query_ipv4_from_host(domain: str) -> str:
-    if domain == '':
+def query_ipv4_from_host(hostname: str) -> str:
+    if hostname == '':
         raise EmptyHostError()
-    result = query(domain, record_type='a')
+    result = query(hostname, record_type='a')
     if len(result) > 0:
         return result[0]
-    raise HostError()
+    raise HostError(f"Hostname {hostname} is offline or does not exist")
 
 
 def host_is_active(hostname: str) -> bool:

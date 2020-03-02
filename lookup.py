@@ -1,29 +1,28 @@
 #! python3
 # ===================================================================
 # Module Name:  lookup.py
-# Purpose:      Lookup blacklist status of a single domain.
+# Purpose:      Lookup blacklist status of a set of domains.
 # ===================================================================
 
 import os
 import argparse
 import csv
 
-from typing import List, Dict, Sequence
+from typing import List, Sequence
 
 import dnstools
-from dnstools.domain import Domain
 from collections import OrderedDict
 from configparser import ConfigParser
 
-from blacklist.blacklist import Blacklist, BlacklistType
+from blacklist.blacklist import Blacklist
 from blacklist.blacklist import create_blacklist
 from blacklist.checker import BlacklistChecker, DomainStatus
 
 
-def load_domains_from_csv(filename: str, domain_field: str, delimiter: str = ',') -> List[Dict]:
+def load_hostnames_from_csv(filename: str, host_field: str, delimiter: str = ',') -> List[str]:
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile, delimiter=delimiter)
-        return [row[domain_field] for row in reader if row[domain_field] != '']
+        return [row[host_field] for row in reader if row[host_field] != '']
 
 
 def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
@@ -79,30 +78,21 @@ def get_args():
     return parser.parse_args()
 
 
-def init_domains(args, cfg: ConfigParser) -> List[Domain]:
+def init_domains(args, cfg: ConfigParser) -> List[str]:
     if args.domain:
         # lookup a single specified domain
         domains = [args.domain]
     elif args.filename:
         # lookup domains from indicated file
-        domains = load_domains_from_csv(
+        domains = load_hostnames_from_csv(
             args.filename, args.column)
     else:
         # load domains from default file location
-        domains = load_domains_from_csv(
+        domains = load_hostnames_from_csv(
             cfg.get('DOMAINS', 'FilePath'),
             cfg.get('DOMAINS', 'Fieldname'),
             cfg.get('DOMAINS', 'Delimiter'))
     return domains
-
-
-def lookup(domains: Sequence[Domain], checker: BlacklistChecker) -> List[DomainStatus]:
-    results = []
-    for domain in domains:
-        print('Checking', domain, '...')
-        result = checker.query(domain, BlacklistType.ALL)
-        results.append(result)
-    return results
 
 
 def main():
@@ -113,12 +103,11 @@ def main():
     args = get_args()
 
     domains = init_domains(args, cfg)
-    print('Loaded', len(domains), 'domains')
     blacklists = load_blacklists_from_csv(
         cfg.get('BLACKLIST', 'Blacklists'))
     checker = BlacklistChecker(blacklists)
 
-    results = lookup(domains, checker)
+    results = checker.lookup(domains)
 
     if args.report:
         save_location = args.report
