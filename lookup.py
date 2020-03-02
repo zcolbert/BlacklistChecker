@@ -42,7 +42,7 @@ def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
     return blacklists
 
 
-def create_csv_report(results, save_location: str):
+def create_csv_report(results: Sequence[DomainStatus], save_location: str):
     fieldnames = ['Domain', 'IP Address', 'Domain Status', 'IP Status']
     filename = os.path.join(save_location, 'Listed_Report.csv')
 
