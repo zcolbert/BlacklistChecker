@@ -8,22 +8,25 @@ import os
 import argparse
 import csv
 
+from typing import List, Dict, Sequence
+
 import dnstools
+from dnstools.domain import Domain
 from collections import OrderedDict
 from configparser import ConfigParser
 
-from blacklist.blacklist import BlacklistType
+from blacklist.blacklist import Blacklist, BlacklistType
 from blacklist.blacklist import create_blacklist
-from blacklist.checker import BlacklistChecker
+from blacklist.checker import BlacklistChecker, DomainStatus
 
 
-def load_domains_from_csv(filename, domain_field, delimiter=','):
+def load_domains_from_csv(filename: str, domain_field: str, delimiter: str = ',') -> List[Dict]:
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile, delimiter=delimiter)
         return [row[domain_field] for row in reader if row[domain_field] != '']
 
 
-def load_blacklists_from_csv(filename):
+def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
     blacklists = []
     with open(filename, 'r') as srcfile:
         reader = csv.DictReader(srcfile)
@@ -39,7 +42,7 @@ def load_blacklists_from_csv(filename):
     return blacklists
 
 
-def create_csv_report(results, save_location):
+def create_csv_report(results, save_location: str):
     fieldnames = ['Domain', 'IP Address', 'Domain Status', 'IP Status']
     filename = os.path.join(save_location, 'Listed_Report.csv')
 
@@ -64,15 +67,6 @@ def create_csv_report(results, save_location):
     print('Done.')
 
 
-def lookup(domains, checker):
-    results = []
-    for domain in domains:
-        print('Checking', domain, '...')
-        result = checker.query(domain, BlacklistType.ALL)
-        results.append(result)
-    return results
-
-
 def get_args():
     parser = argparse.ArgumentParser(
         description='Check domain or IP against blacklists')
@@ -85,7 +79,7 @@ def get_args():
     return parser.parse_args()
 
 
-def init_domains(args, cfg):
+def init_domains(args, cfg: ConfigParser) -> List[Domain]:
     if args.domain:
         # lookup a single specified domain
         domains = [args.domain]
@@ -100,6 +94,15 @@ def init_domains(args, cfg):
             cfg.get('DOMAINS', 'Fieldname'),
             cfg.get('DOMAINS', 'Delimiter'))
     return domains
+
+
+def lookup(domains: Sequence[Domain], checker: BlacklistChecker) -> List[DomainStatus]:
+    results = []
+    for domain in domains:
+        print('Checking', domain, '...')
+        result = checker.query(domain, BlacklistType.ALL)
+        results.append(result)
+    return results
 
 
 def main():
