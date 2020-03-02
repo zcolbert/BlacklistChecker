@@ -1,8 +1,6 @@
-from abc import ABC
-from abc import abstractmethod
 from enum import Enum
-
-from dnstools.resolver import DnsResolver
+import dnstools
+from dnstools.domain import Domain
 
 
 class BlacklistType(Enum):
@@ -12,7 +10,59 @@ class BlacklistType(Enum):
     DOMAIN = 'Domain'
 
 
-def create_blacklist(bltype, qzone, alias):
+class Blacklist:
+    """Base class for Blacklists"""
+    def __init__(self, query_zone: str, alias: str = ''):
+        self._query_type = BlacklistType
+        self._query_zone = query_zone
+        self.alias = alias
+
+    @property
+    def query_type(self) -> BlacklistType:
+        return self._query_type.value
+
+    @property
+    def query_zone(self) -> str:
+        return self._query_zone
+
+    def _get_lookup_string(self, domain) -> str:
+        """Return a string used to query the blacklist"""
+        pass
+
+    def query(self, domain: Domain):
+        lookup_addr = self._get_lookup_string(domain)
+        result = dnstools.query(lookup_addr, 'A')
+        return result != []
+
+
+class IPBlacklist(Blacklist):
+    """Represents an IP Blacklist"""
+    def __init__(self, query_zone: str, alias: str = ''):
+        super().__init__(query_zone, alias)
+        self._query_type = BlacklistType.IP_ADDRESS
+
+    def __repr__(self):
+        return f"IPBlacklist<alias='{self.alias}', query_zone='{self.query_zone}'>"
+
+    def _get_lookup_string(self, domain: Domain) -> str:
+        reversed_ip = dnstools.reverse_ipv4_octets(domain.ipv4_address)
+        return f'{reversed_ip}.{self.query_zone}'
+
+
+class DomainBlacklist(Blacklist):
+    """Represents a Domain Blacklist"""
+    def __init__(self, query_zone: str, alias: str = ''):
+        super().__init__(query_zone, alias)
+        self._query_type = BlacklistType.DOMAIN
+
+    def __repr__(self) -> str:
+        return f"DomainBlacklist<alias='{self.alias}', query_zone='{self.query_zone}'>"
+
+    def _get_lookup_string(self, domain: Domain):
+        return f'{domain.hostname}.{self.query_zone}'
+
+
+def create_blacklist(bltype: BlacklistType, qzone: str, alias: str) -> Blacklist:
     """Factory function to initialize Blacklists"""
     if bltype == BlacklistType.IP_ADDRESS.value:
         return IPBlacklist(qzone, alias)
@@ -21,59 +71,3 @@ def create_blacklist(bltype, qzone, alias):
     else:
         msg = "Unknown Blacklist type: '{}'"
         raise ValueError(msg.format(bltype))
-
-
-class Blacklist(ABC):
-    """Abstract base class for Blacklists"""
-    def __init__(self, query_zone, alias=''):
-        self._query_type = BlacklistType
-        self._query_zone = query_zone
-        self.alias = alias
-        self.resolver = DnsResolver()
-
-    @property
-    def query_type(self):
-        return self._query_type.value
-
-    @property
-    def query_zone(self):
-        return self._query_zone
-
-    @abstractmethod
-    def _get_lookup_string(self, domain):
-        """Return a string used to query the blacklist"""
-        pass
-
-    def query(self, domain):
-        lookup_addr = self._get_lookup_string(domain)
-        result = self.resolver.query(lookup_addr, 'A')
-        return result != self.resolver.norecord
-
-
-class IPBlacklist(Blacklist):
-    """Represents an IP Blacklist"""
-    def __init__(self, query_zone, alias=''):
-        Blacklist.__init__(self, query_zone, alias)
-        self._query_type = BlacklistType.IP_ADDRESS
-
-    def __repr__(self):
-        msg = "IPBlacklist<alias='{}', query_zone='{}'>"
-        return msg.format(self.alias, self.query_zone)
-
-    def _get_lookup_string(self, domain):
-        reversed_ip = domain.ipv4_address.reverse()
-        return reversed_ip + '.' + self.query_zone
-
-
-class DomainBlacklist(Blacklist):
-    """Represents a Domain Blacklist"""
-    def __init__(self, query_zone, alias=''):
-        Blacklist.__init__(self, query_zone, alias)
-        self._query_type = BlacklistType.DOMAIN
-
-    def __repr__(self):
-        msg = "DomainBlacklist<alias='{}', query_zone='{}'>"
-        return msg.format(self.alias, self.query_zone)
-
-    def _get_lookup_string(self, domain):
-        return domain.name + '.' + self.query_zone
