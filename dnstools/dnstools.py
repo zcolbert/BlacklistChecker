@@ -1,8 +1,17 @@
 from typing import List
 
 import dns.resolver
-import dnstools.exception
 import socket
+
+
+class HostError(Exception):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+
+
+class EmptyHostError(HostError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
 
 
 def query(domain_name: str, record_type: str) -> List[str]:
@@ -23,18 +32,18 @@ def query(domain_name: str, record_type: str) -> List[str]:
 
 def query_ipv4_from_host(domain: str) -> str:
     if domain == '':
-        raise dnstools.exception.EmptyHostError()
+        raise EmptyHostError()
     result = query(domain, record_type='a')
     if len(result) > 0:
         return result[0]
-    raise dnstools.exception.HostError()
+    raise HostError()
 
 
 def host_is_active(hostname: str) -> bool:
     try:
         query_ipv4_from_host(hostname)
         return True
-    except dnstools.exception.HostError:
+    except HostError:
         return False
 
 
