@@ -7,6 +7,8 @@
 import os
 import argparse
 import csv
+
+import dnstools
 from collections import OrderedDict
 from configparser import ConfigParser
 
@@ -49,9 +51,9 @@ def create_csv_report(results, save_location):
 
         for r in results:
             row = OrderedDict()
-            row['Domain'] = r.domain.name
+            row['Domain'] = r.domain.hostname
 
-            if r.domain_is_active():
+            if dnstools.host_is_active(r.domain.hostname):
                 row['IP Address'] = r.domain.ipv4_address
             else:
                 row['IP Address'] = 'Offline'
@@ -85,16 +87,16 @@ def get_args():
 
 def init_domains(args, cfg):
     if args.domain:
-        # lookup domain specified
+        # lookup a single specified domain
         domains = [args.domain]
     elif args.filename:
-        # lookup domains from file specified
+        # lookup domains from indicated file
         domains = load_domains_from_csv(
             args.filename, args.column)
     else:
         # load domains from default file location
         domains = load_domains_from_csv(
-            cfg.get('DOMAINS', 'TestFilePath'),
+            cfg.get('DOMAINS', 'FilePath'),
             cfg.get('DOMAINS', 'Fieldname'),
             cfg.get('DOMAINS', 'Delimiter'))
     return domains
@@ -108,6 +110,7 @@ def main():
     args = get_args()
 
     domains = init_domains(args, cfg)
+    print('Loaded', len(domains), 'domains')
     blacklists = load_blacklists_from_csv(
         cfg.get('BLACKLIST', 'Blacklists'))
     checker = BlacklistChecker(blacklists)
