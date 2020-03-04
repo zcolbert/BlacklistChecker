@@ -74,6 +74,7 @@ def get_args():
     parser.add_argument('-f', '--filename')
     parser.add_argument('-c', '--column')
     parser.add_argument('-r', '--report')
+    parser.add_argument('-p', '--print', action='store_true', default=False)
 
     return parser.parse_args()
 
@@ -95,6 +96,15 @@ def init_domains(args, cfg: ConfigParser) -> List[str]:
     return domains
 
 
+def print_results(results):
+    for r in results:
+        print(r.domain.hostname, r.status)
+        if r.domain_is_listed():
+            print('Domain listed')
+        if r.ip_is_listed():
+            print('IP Listed')
+
+
 def main():
 
     cfg = ConfigParser()
@@ -108,6 +118,9 @@ def main():
     checker = BlacklistChecker(blacklists)
 
     results = checker.lookup(domains)
+
+    if args.print:
+        print_results(results)
 
     if args.report:
         save_location = args.report
