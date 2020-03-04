@@ -96,13 +96,16 @@ def init_domains(args, cfg: ConfigParser) -> List[str]:
     return domains
 
 
-def print_results(results):
-    for r in results:
-        print(r.domain.hostname, r.status)
-        if r.domain_is_listed():
-            print('Domain listed')
-        if r.ip_is_listed():
-            print('IP Listed')
+def lookup_hostnames(checker: BlacklistChecker, hostnames: Sequence[str], verbose=False) -> List[DomainStatus]:
+    results = []
+    for host in hostnames:
+        if verbose:
+            print(f'Looking up {host} ... ', end='')
+        result = checker.query(host)
+        if verbose:
+            print(result.status)
+        results.append(result)
+    return results
 
 
 def main():
@@ -113,14 +116,12 @@ def main():
     args = get_args()
 
     domains = init_domains(args, cfg)
+
     blacklists = load_blacklists_from_csv(
         cfg.get('BLACKLIST', 'Blacklists'))
+
     checker = BlacklistChecker(blacklists)
-
-    results = checker.lookup(domains)
-
-    if args.print:
-        print_results(results)
+    results = lookup_hostnames(checker, domains, verbose=args.print)
 
     if args.report:
         save_location = args.report

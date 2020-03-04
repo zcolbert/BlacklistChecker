@@ -34,10 +34,3 @@ class BlacklistChecker:
             listed = bl.query(status.domain)
             if listed:
                 (status.add_blacklist(bl))
-
-    def lookup(self, domains: Sequence[str]) -> List[DomainStatus]:
-        results = []
-        for domain in domains:
-            result = self.query(domain, BlacklistType.ALL)
-            results.append(result)
-        return results
