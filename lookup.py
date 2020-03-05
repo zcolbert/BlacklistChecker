@@ -105,11 +105,8 @@ def init_domains(args, cfg: ConfigParser) -> List[str]:
         logging.info(f'Loaded {len(domains)} successfully')
     else:
         # load domains from default file location
-        file_path = cfg.get('DOMAINS', 'FilePath')
-        if cfg.get('SYSTEM', 'TestMode'):
-            file_path = cfg.get('DOMAINS', 'TestFilePath')
         domains = load_hostnames_from_csv(
-            file_path,
+            cfg.get('DOMAINS', 'FilePath'),
             cfg.get('DOMAINS', 'Fieldname'),
             cfg.get('DOMAINS', 'Delimiter'))
 
@@ -147,7 +144,10 @@ def init_logger(args, config):
     if config.get('SYSTEM', 'TestMode'):
         log_level = logging.DEBUG
 
-    logging.basicConfig(filename=log_path, level=log_level)
+    logging.basicConfig(
+        format='%(asctime)s %(message)s',   # show timestamp
+        filename=log_path,                  # set log output path
+        level=log_level)                    # set log level threshold
 
 
 def main():
