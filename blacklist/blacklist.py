@@ -1,5 +1,6 @@
-from enum import Enum
 import dnstools
+import logging
+from enum import Enum
 from dnstools.domain import Domain
 
 
@@ -32,6 +33,7 @@ class Blacklist:
     def query(self, domain: Domain):
         lookup_addr = self._get_lookup_string(domain)
         result = dnstools.query(lookup_addr, 'A')
+        logging.debug(f'{lookup_addr}\t{result}')
         return result != []
 
 
