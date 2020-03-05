@@ -1,4 +1,6 @@
-from typing import List, Sequence
+import logging
+
+from typing import Sequence
 
 from blacklist.blacklist import Blacklist, BlacklistType
 from blacklist.status import DomainStatus
@@ -16,6 +18,7 @@ class BlacklistChecker:
             self.blacklists[bl.query_type].add(bl)
 
     def query(self, hostname, type=BlacklistType.ALL):
+        logging.info(f'Checking {hostname} ...')
         status = DomainStatus(hostname)
         if type == BlacklistType.ALL:
             self._query_all(status)

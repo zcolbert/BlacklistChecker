@@ -5,6 +5,11 @@ from blacklist.blacklist import Blacklist
 
 
 class DomainStatus:
+
+    UNKNOWN = 'Unknown'
+    LISTED = 'Listed'
+    CLEAN = 'Clean'
+
     def __init__(self, domain: str):
         self._domain = Domain(domain)
         self.ip_listings = set()
@@ -26,10 +31,10 @@ class DomainStatus:
     @property
     def status(self) -> str:
         if not self.checked:
-            return 'Unknown'
+            return DomainStatus.UNKNOWN
         if self.domain_is_listed() or self.ip_is_listed():
-            return 'Listed'
-        return 'Clean'
+            return DomainStatus.LISTED
+        return DomainStatus.CLEAN
 
     def domain_is_listed(self) -> bool:
         return len(self.domain_listings) > 0
