@@ -15,7 +15,6 @@ import os
 from typing import List, Dict, Sequence
 from configparser import ConfigParser
 
-import dnstools
 from blacklist.blacklist import Blacklist
 from blacklist.blacklist import create_blacklist
 from blacklist.checker import BlacklistChecker, DomainStatus
@@ -200,7 +199,6 @@ def main():
 
     except Exception as err:
         logging.exception(err)
-
 
 
 if __name__ == "__main__":
