@@ -2,6 +2,8 @@
 # ===================================================================
 # Module Name:  lookup.py
 # Purpose:      Lookup blacklist status of a set of domains.
+# Author:       Zac Colbert
+# Contact:      zcolbert1993@gmail.com
 # ===================================================================
 
 import argparse
