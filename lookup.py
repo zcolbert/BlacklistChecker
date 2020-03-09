@@ -11,7 +11,6 @@ import logging
 import os
 
 from typing import List, Dict, Sequence
-from collections import OrderedDict
 from configparser import ConfigParser
 
 import dnstools
