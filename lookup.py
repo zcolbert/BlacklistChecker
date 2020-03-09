@@ -66,7 +66,7 @@ def create_csv_report(results: Sequence[DomainStatus], save_location: str):
             writer.writeheader()
 
             for r in results:
-                row = OrderedDict()  # TODO not necessary to use OrderedDict here
+                row = dict()
                 row['Domain'] = r.domain.hostname
 
                 # Record IP address, or 'Offline' if the domain is not in use
@@ -112,7 +112,7 @@ def init_domains(args, cfg: ConfigParser) -> List[str]:
         # load domains from default file location
         domains = load_hostnames_from_csv(
             cfg.get('DOMAINS', 'FilePath'),
-            cfg.get('DOMAINS', 'Fieldname'),
+            cfg.get('DOMAINS', 'FieldName'),
             cfg.get('DOMAINS', 'Delimiter'))
 
     logging.info(f'Loaded {len(domains)} hostnames successfully')
@@ -156,7 +156,7 @@ def init_logger(args, config):
 
     # apply settings to default logger
     logging.basicConfig(
-        format='%(asctime)s %(message)s',   # show timestamp
+        format='%(asctime)s %(message)s',   # prefix each log entry with timestamp
         filename=log_path,                  # set log output path
         level=log_level)                    # set log level threshold
 
