@@ -125,13 +125,10 @@ def lookup_hostnames(checker: BlacklistChecker, hostnames: Sequence[str]) -> Lis
 
 def log_domain_status(status: DomainStatus):
     domain = status.domain
-    if status.status == DomainStatus.LISTED:
-        if status.domain_is_listed():
-            logging.info(f'\t{domain.hostname} listed ({len(status.domain_listings)})')
-        if status.ip_is_listed():
-            logging.info(f'\t{domain.ipv4_address} listed ({len(status.ip_listings)})')
-    else:
-        logging.info(f'\t{domain.hostname}/{domain.ipv4_address} are clean')
+    if status.domain_is_listed():
+        logging.info(f'\t{domain.hostname} listed ({len(status.domain_listings)})')
+    if status.ip_is_listed():
+        logging.info(f'\t{domain.ipv4_address} listed ({len(status.ip_listings)})')
 
 
 def init_logger(args, config):
@@ -141,7 +138,7 @@ def init_logger(args, config):
     log_level = logging.WARNING
     if args.verbose:
         log_level = logging.INFO
-    if config.get('SYSTEM', 'TestMode'):
+    if config.get('SYSTEM', 'TestMode') == True:
         log_level = logging.DEBUG
 
     logging.basicConfig(
