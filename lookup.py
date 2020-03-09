@@ -21,17 +21,19 @@ from blacklist.checker import BlacklistChecker, DomainStatus
 
 
 def load_hostnames_from_csv(filename: str, host_field: str, delimiter: str = ',') -> List[str]:
+    """Load a list of hostnames from a csv file."""
     logging.info(f'Loading hostnames from {filename} ...')
     try:
         with open(filename, 'r') as srcfile:
             reader = csv.DictReader(srcfile, delimiter=delimiter)
             return [row[host_field] for row in reader if row[host_field] != '']
-    except FileNotFoundError as err:
+    except FileNotFoundError:
         logging.critical(f"Failed to load hostnames from '{filename}': File not found")
-        raise err
+        raise
 
 
 def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
+    """Initialize a list of Domain and IP blacklists from a csv file."""
     blacklists = []
     try:
         with open(filename, 'r') as srcfile:
@@ -46,12 +48,13 @@ def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
                     # Unknown blacklist type. Skip this record
                     continue
         return blacklists
-    except FileNotFoundError as err:
-        logging.critical(f"ABORTED - Failed to load blacklists from '{filename}': File not found")
-        raise err
+    except FileNotFoundError:
+        logging.critical(f"Failed to load blacklists from '{filename}': File not found")
+        raise
 
 
 def create_csv_report(results: Sequence[DomainStatus], save_location: str):
+    """Write domain and IP blacklist status to the specified CSV file."""
     fieldnames = ['Domain', 'IP Address', 'Domain Status', 'IP Status']
     filename = os.path.join(save_location, 'Listed_Report.csv')
 
@@ -82,6 +85,7 @@ def create_csv_report(results: Sequence[DomainStatus], save_location: str):
 
 
 def get_args():
+    """Retrieve and parse command line arguments."""
     parser = argparse.ArgumentParser(
         description='Check domain or IP against blacklists')
 
@@ -116,15 +120,20 @@ def init_domains(args, cfg: ConfigParser) -> List[str]:
 
 
 def lookup_hostnames(checker: BlacklistChecker, hostnames: Sequence[str]) -> List[DomainStatus]:
+    """Look up blacklist status of each hostname
+    and return a list of DomainStatus results."""
+    logging.info(f'Checking {len(hostnames)} domains ...')
     results = []
     for host in hostnames:
         result = checker.query(host)
         log_domain_status(result)
         results.append(result)
+    logging.info('Lookup completed')
     return results
 
 
 def log_domain_status(status: DomainStatus):
+    """Write the listing status of a domain to the log."""
     domain = status.domain
     if status.domain_is_listed():
         logging.info(f'\t{domain.hostname} listed ({len(status.domain_listings)})')
@@ -133,15 +142,19 @@ def log_domain_status(status: DomainStatus):
 
 
 def init_logger(args, config):
+    """Initialize the logger configuration."""
+    # set log file path string
     today = datetime.datetime.today().strftime('%m-%d-%y')
     log_path = os.path.join('logs', f'{today}.log')
 
+    # set log level threshold
     log_level = logging.WARNING
     if args.verbose:
         log_level = logging.INFO
     if config.get('SYSTEM', 'TestMode') == True:
         log_level = logging.DEBUG
 
+    # apply settings to default logger
     logging.basicConfig(
         format='%(asctime)s %(message)s',   # show timestamp
         filename=log_path,                  # set log output path
@@ -155,21 +168,20 @@ def main():
 
     args = get_args()
     init_logger(args, cfg)
-    domains = init_domains(args, cfg)
 
+    domains = init_domains(args, cfg)
     blacklists = load_blacklists_from_csv(
         cfg.get('FILES', 'Blacklists'))
 
     checker = BlacklistChecker(blacklists)
-
-    logging.info(f'Checking {len(domains)} domains ...')
     results = lookup_hostnames(checker, domains)
-    logging.info('Lookup completed')
 
+    # determine report save location
     if args.report:
         save_location = args.report
     else:
         save_location = cfg.get('FILES', 'ReportSaveLocation')
+
     create_csv_report(results, save_location)
 
 
