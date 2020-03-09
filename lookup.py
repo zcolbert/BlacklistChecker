@@ -23,13 +23,13 @@ from blacklist.checker import BlacklistChecker, DomainStatus
 
 def load_hostnames_from_csv(filename: str, host_field: str, delimiter: str = ',') -> List[str]:
     """Load a list of hostnames from a csv file."""
-    logging.info(f'Loading hostnames from {filename} ...')
+    logging.info(f'Loading hostnames from "{filename}" ...')
     try:
         with open(filename, 'r') as srcfile:
             reader = csv.DictReader(srcfile, delimiter=delimiter)
             return [row[host_field] for row in reader if row[host_field] != '']
     except FileNotFoundError:
-        logging.critical(f"Failed to load hostnames from '{filename}': File not found")
+        logging.critical(f'Failed to load hostnames from "{filename}": File not found')
         raise
 
 
@@ -50,32 +50,31 @@ def load_blacklists_from_csv(filename: str, fieldnames: Dict[str, str]) -> List[
                     continue
         return blacklists
     except FileNotFoundError:
-        logging.critical(f"Failed to load blacklists from '{filename}': File not found")
+        logging.critical(f'Failed to load blacklists from "{filename}": File not found')
         raise
 
 
 def create_csv_report(results: Sequence[DomainStatus], save_location: str):
     """Write domain and IP blacklist status to the specified CSV file."""
     fieldnames = ['Domain', 'IP Address', 'Domain Status', 'IP Status']
-    filename = os.path.join(save_location, 'Listed_Report.csv')
+    filename = 'Listed_Report.csv'
+    filepath = os.path.join(save_location, filename)
 
-    logging.info(f'Creating {filename} ...')
+    if not os.path.isdir(save_location):
+        logging.info(f'Directory "{save_location}" is missing. Creating...')
+        os.mkdir(save_location)
+        logging.info('Directory created successfully')
 
     try:
-        with open(filename, 'w', newline='') as srcfile:
+        logging.info(f'Creating file "{filepath}" ...')
+        with open(filepath, 'w', newline='') as srcfile:
             writer = csv.DictWriter(srcfile, fieldnames=fieldnames)
             writer.writeheader()
 
             for r in results:
                 row = dict()
                 row['Domain'] = r.domain.hostname
-
-                # Record IP address, or 'Offline' if the domain is not in use
-                if dnstools.host_is_active(r.domain.hostname):
-                    row['IP Address'] = r.domain.ipv4_address
-                else:
-                    row['IP Address'] = 'Offline'
-
+                row['IP Address'] = r.domain.ipv4_address
                 row['Domain Status'] = ', '.join([bl.alias for bl in r.domain_listings])
                 row['IP Status'] = ', '.join([bl.alias for bl in r.ip_listings])
                 writer.writerow(row)
@@ -102,7 +101,7 @@ def get_args():
 def init_domains(args, cfg: ConfigParser) -> List[str]:
     if args.domain:
         # lookup a single specified domain
-        logging.info(f'Hostname {args.domain} supplied from command line')
+        logging.info(f'Hostname "{args.domain}" supplied from command line')
         domains = [args.domain]
     elif args.filename:
         # lookup domains from indicated file
@@ -148,6 +147,10 @@ def init_logger(args, config):
     today = datetime.datetime.today().strftime('%m-%d-%y')
     log_path = os.path.join('logs', f'{today}.log')
 
+    # create the log directory if not already present
+    if not os.path.isdir(config.get('SYSTEM', 'LogDirectory')):
+        os.mkdir(config.get('SYSTEM', 'LogDirectory'))
+
     # set log level threshold
     log_level = logging.WARNING
     if args.verbose:
@@ -164,31 +167,40 @@ def init_logger(args, config):
 
 def main():
 
-    cfg = ConfigParser()
-    cfg.read('config.ini')
+    try:
+        cfg = ConfigParser()
+        cfg.read('config.ini')
 
-    args = get_args()
-    init_logger(args, cfg)
+        args = get_args()
+        init_logger(args, cfg)
 
-    domains = init_domains(args, cfg)
-    blacklists = load_blacklists_from_csv(
-        cfg.get('BLACKLIST', 'FilePath'),
-        fieldnames={
-            'zone': cfg.get('BLACKLIST', 'QueryZoneFieldName'),
-            'type': cfg.get('BLACKLIST', 'QueryTypeFieldName'),
-            'alias': cfg.get('BLACKLIST', 'AliasFieldName')
-        }
-    )
-    checker = BlacklistChecker(blacklists)
-    results = lookup_hostnames(checker, domains)
+        logging.info('Begin execution')
 
-    # determine report save location
-    if args.report:
-        save_location = args.report
-    else:
-        save_location = cfg.get('REPORT', 'SaveLocation')
+        domains = init_domains(args, cfg)
+        blacklists = load_blacklists_from_csv(
+            cfg.get('BLACKLIST', 'FilePath'),
+            fieldnames={
+                'zone': cfg.get('BLACKLIST', 'QueryZoneFieldName'),
+                'type': cfg.get('BLACKLIST', 'QueryTypeFieldName'),
+                'alias': cfg.get('BLACKLIST', 'AliasFieldName')
+            }
+        )
+        checker = BlacklistChecker(blacklists)
+        results = lookup_hostnames(checker, domains)
 
-    create_csv_report(results, save_location)
+        # determine report save location
+        if args.report:
+            save_location = args.report
+        else:
+            save_location = cfg.get('REPORT', 'SaveLocation')
+
+        create_csv_report(results, save_location)
+
+        logging.info('Execution finished')
+
+    except Exception as err:
+        logging.exception(err)
+
 
 
 if __name__ == "__main__":

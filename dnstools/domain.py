@@ -2,6 +2,7 @@ import dnstools
 
 
 class Domain:
+    INACTIVE = 'Inactive'
     DEFAULT_IP = '0.0.0.0'
 
     def __init__(self, name):
@@ -29,5 +30,8 @@ class Domain:
         """Return ipv4 address"""
         if self._ipv4 == Domain.DEFAULT_IP or refresh is True:
             # query domain to get refreshed IPAddress
-            self._ipv4 = dnstools.query_ipv4_from_host(self.hostname)
+            try:
+                self._ipv4 = dnstools.query_ipv4_from_host(self.hostname)
+            except dnstools.HostError:
+                self._ipv4 = Domain.INACTIVE
         return self._ipv4
