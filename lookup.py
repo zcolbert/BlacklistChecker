@@ -10,7 +10,7 @@ import datetime
 import logging
 import os
 
-from typing import List, Sequence
+from typing import List, Dict, Sequence
 from collections import OrderedDict
 from configparser import ConfigParser
 
@@ -32,16 +32,16 @@ def load_hostnames_from_csv(filename: str, host_field: str, delimiter: str = ','
         raise
 
 
-def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
+def load_blacklists_from_csv(filename: str, fieldnames: Dict[str, str]) -> List[Blacklist]:
     """Initialize a list of Domain and IP blacklists from a csv file."""
     blacklists = []
     try:
         with open(filename, 'r') as srcfile:
             reader = csv.DictReader(srcfile)
             for row in reader:
-                zone = row['Query Zone']
-                list_type = row['Query Type']
-                alias = row['Alias']
+                zone = row[fieldnames['zone']]
+                list_type = row[fieldnames['type']]
+                alias = row[fieldnames['alias']]
                 try:
                     blacklists.append(create_blacklist(list_type, zone, alias))
                 except ValueError:
@@ -171,8 +171,13 @@ def main():
 
     domains = init_domains(args, cfg)
     blacklists = load_blacklists_from_csv(
-        cfg.get('FILES', 'Blacklists'))
-
+        cfg.get('BLACKLIST', 'FilePath'),
+        fieldnames={
+            'zone': cfg.get('BLACKLIST', 'QueryZoneFieldName'),
+            'type': cfg.get('BLACKLIST', 'QueryTypeFieldName'),
+            'alias': cfg.get('BLACKLIST', 'AliasFieldName')
+        }
+    )
     checker = BlacklistChecker(blacklists)
     results = lookup_hostnames(checker, domains)
 
