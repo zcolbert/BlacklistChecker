@@ -9,7 +9,6 @@ import csv
 import datetime
 import logging
 import os
-import sys
 
 from typing import List, Sequence
 from collections import OrderedDict
@@ -27,9 +26,9 @@ def load_hostnames_from_csv(filename: str, host_field: str, delimiter: str = ','
         with open(filename, 'r') as srcfile:
             reader = csv.DictReader(srcfile, delimiter=delimiter)
             return [row[host_field] for row in reader if row[host_field] != '']
-    except FileNotFoundError:
-        logging.critical(f"ABORTED - Failed to load hostnames from '{filename}': File not found")
-        sys.exit(-1)
+    except FileNotFoundError as err:
+        logging.critical(f"Failed to load hostnames from '{filename}': File not found")
+        raise err
 
 
 def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
@@ -47,9 +46,9 @@ def load_blacklists_from_csv(filename: str) -> List[Blacklist]:
                     # Unknown blacklist type. Skip this record
                     continue
         return blacklists
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         logging.critical(f"ABORTED - Failed to load blacklists from '{filename}': File not found")
-        sys.exit(-1)
+        raise err
 
 
 def create_csv_report(results: Sequence[DomainStatus], save_location: str):
@@ -64,9 +63,10 @@ def create_csv_report(results: Sequence[DomainStatus], save_location: str):
             writer.writeheader()
 
             for r in results:
-                row = OrderedDict()
+                row = OrderedDict()  # TODO not necessary to use OrderedDict here
                 row['Domain'] = r.domain.hostname
 
+                # Record IP address, or 'Offline' if the domain is not in use
                 if dnstools.host_is_active(r.domain.hostname):
                     row['IP Address'] = r.domain.ipv4_address
                 else:
@@ -77,6 +77,7 @@ def create_csv_report(results: Sequence[DomainStatus], save_location: str):
                 writer.writerow(row)
         logging.info('File created successfully')
     except PermissionError:
+        # File IO Error (file is likely open already)
         logging.error('Failed to create report file: Permission denied')
 
 
