@@ -185,7 +185,7 @@ def main():
     if args.report:
         save_location = args.report
     else:
-        save_location = cfg.get('FILES', 'ReportSaveLocation')
+        save_location = cfg.get('REPORT', 'SaveLocation')
 
     create_csv_report(results, save_location)
 
