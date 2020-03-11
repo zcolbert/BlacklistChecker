@@ -16,17 +16,17 @@ class Domain:
         return self.hostname
 
     @property
-    def hostname(self):
+    def hostname(self) -> str:
         """Return the domain name"""
         return self._name
 
     @property
-    def tld(self):
+    def tld(self) -> str:
         """Return the top level domain name"""
         return self.hostname.split('.')[-1]
 
     @property
-    def ipv4_address(self, refresh=False):
+    def ipv4_address(self, refresh=False) -> str:
         """Return ipv4 address"""
         if self._ipv4 == Domain.DEFAULT_IP or refresh is True:
             # query domain to get refreshed IPAddress

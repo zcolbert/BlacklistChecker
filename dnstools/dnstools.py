@@ -3,15 +3,7 @@ from typing import List
 import dns.resolver
 import socket
 
-
-class HostError(Exception):
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-
-
-class EmptyHostError(HostError):
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
+from dnstools.exception import HostError, EmptyHostError
 
 
 def query(domain_name: str, record_type: str) -> List[str]:
