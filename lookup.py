@@ -11,6 +11,7 @@ import csv
 import datetime
 import logging
 import os
+import sys
 
 from typing import List, Dict, Sequence
 from configparser import ConfigParser
@@ -158,10 +159,14 @@ def init_logger(args, config):
         log_level = logging.DEBUG
 
     # apply settings to default logger
+    log_format = '%(levelname)s:%(asctime)s - %(message)s'
     logging.basicConfig(
-        format='%(asctime)s %(message)s',   # prefix each log entry with timestamp
-        filename=log_path,                  # set log output path
-        level=log_level)                    # set log level threshold
+        format=log_format,  # set format of log entries
+        filename=log_path,  # set log output path
+        level=log_level)    # set log level threshold
+
+    # print log entries to console during execution
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 
 def main():
