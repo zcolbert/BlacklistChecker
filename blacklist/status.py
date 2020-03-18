@@ -1,7 +1,5 @@
-from typing import Set
-
 from dnstools.domain import Domain
-from blacklist.blacklist import Blacklist
+from blacklist.blacklist import Blacklist, BlacklistType
 
 
 class DomainStatus:
@@ -10,8 +8,8 @@ class DomainStatus:
     LISTED = 'Listed'
     CLEAN = 'Clean'
 
-    def __init__(self, domain: str):
-        self._domain = Domain(domain)
+    def __init__(self, domain: Domain):
+        self._domain = domain
         self.ip_listings = set()
         self.domain_listings = set()
         self.checked = False
@@ -19,10 +17,6 @@ class DomainStatus:
     def __repr__(self):
         msg = "DomainStatus<domain='{}', status='{}'>"
         return msg.format(self.domain, self.status)
-
-    @property
-    def blacklists(self) -> Set[Blacklist]:
-        return self.ip_listings.union(self.domain_listings)
 
     @property
     def domain(self) -> Domain:
@@ -42,12 +36,10 @@ class DomainStatus:
     def ip_is_listed(self) -> bool:
         return len(self.ip_listings) > 0
 
-    def add_blacklist(self, blacklist: Blacklist):
-        if blacklist.query_type == 'IP Address':
-            self.ip_listings.add(blacklist)
-        elif blacklist.query_type == 'Domain':
-            self.domain_listings.add(blacklist)
-        else:
-            msg = 'Unknown blacklist type: {}'
-            raise ValueError(msg.format(blacklist.query_type))
+    def add_blacklist(self, blacklist: Blacklist, listed: bool):
+        if listed:
+            if blacklist.query_type == BlacklistType.IP_ADDRESS.value:
+                self.ip_listings.add(blacklist)
+            else:
+                self.domain_listings.add(blacklist)
         self.checked = True
