@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 import dns.resolver
 import socket
@@ -9,15 +9,25 @@ from dnstools.exception import HostError, EmptyHostError
 class DnsResolver(dns.resolver.Resolver):
     def __init__(self, filename='/etc/resolv.conf', configure=True):
         super().__init__(filename, configure)
+        # cache default nameservers so they can be restored
+        self.default_nameservers = self.nameservers
 
-    def query_authoritative_nameservers(self, hostname: str) -> List[str]:
-        """Resolve authoritative nameserver records from hostname."""
+    def reset_nameservers_to_default(self):
+        self.nameservers = self.default_nameservers
+
+    def add_nameservers(self, nameservers: Sequence[str]):
+        self.nameservers.extend(nameservers)
+
+    def query_ns_records(self, hostname: str):
         if hostname == '':
             raise EmptyHostError()
         try:
             answers = self.query(hostname, 'NS')
             return [rdata.to_text() for rdata in answers]
         except dns.resolver.NoAnswer:
+            # no nameservers were found
+            return list()
+        except dns.resolver.NoNameservers:
             # no nameservers were found
             return list()
 
@@ -29,9 +39,10 @@ class DnsResolver(dns.resolver.Resolver):
             return [rdata.to_text() for rdata in answers]
         except (dns.resolver.NXDOMAIN,
                 dns.resolver.NoAnswer,
-                dns.resolver.NoNameservers,
                 dns.resolver.Timeout) as err:
             # lookup returned no result
+            return list()
+        except dns.resolver.NoNameservers:
             return list()
 
 
