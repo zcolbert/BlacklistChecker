@@ -19,6 +19,7 @@ from configparser import ConfigParser
 from blacklist.blacklist import Blacklist
 from blacklist.blacklist import create_blacklist
 from blacklist.checker import BlacklistChecker, DomainStatus
+from dnstools import DnsResolver
 
 
 def load_hostnames_from_csv(filename: str, host_field: str, delimiter: str = ',') -> List[str]:
@@ -171,39 +172,38 @@ def init_logger(args, config):
 
 def main():
 
-    try:
-        cfg = ConfigParser()
-        cfg.read('config.ini')
+    cfg = ConfigParser()
+    cfg.read('config.ini')
 
-        args = get_args()
-        init_logger(args, cfg)
+    args = get_args()
+    init_logger(args, cfg)
 
-        logging.info('Begin execution')
+    logging.info('Begin execution')
 
-        domains = init_domains(args, cfg)
-        blacklists = load_blacklists_from_csv(
-            cfg.get('BLACKLIST', 'FilePath'),
-            fieldnames={
-                'zone': cfg.get('BLACKLIST', 'QueryZoneFieldName'),
-                'type': cfg.get('BLACKLIST', 'QueryTypeFieldName'),
-                'alias': cfg.get('BLACKLIST', 'AliasFieldName')
-            }
-        )
-        checker = BlacklistChecker(blacklists)
-        results = lookup_hostnames(checker, domains)
+    domains = init_domains(args, cfg)
+    blacklists = load_blacklists_from_csv(
+        cfg.get('BLACKLIST', 'FilePath'),
+        fieldnames={
+            'zone': cfg.get('BLACKLIST', 'QueryZoneFieldName'),
+            'type': cfg.get('BLACKLIST', 'QueryTypeFieldName'),
+            'alias': cfg.get('BLACKLIST', 'AliasFieldName')
+        }
+    )
+    resolver = DnsResolver()
+    resolver.default_nameservers = cfg.get('SYSTEM', 'PreferredNameservers').split('|')
+    resolver.reset_nameservers_to_default()
+    checker = BlacklistChecker(blacklists, resolver)
+    results = lookup_hostnames(checker, domains)
 
-        # determine report save location
-        if args.report:
-            save_location = args.report
-        else:
-            save_location = cfg.get('REPORT', 'SaveLocation')
+    # determine report save location
+    if args.report:
+        save_location = args.report
+    else:
+        save_location = cfg.get('REPORT', 'SaveLocation')
 
-        create_csv_report(results, save_location)
+    create_csv_report(results, save_location)
 
-        logging.info('Execution finished')
-
-    except Exception as err:
-        logging.exception(err)
+    logging.info('Execution finished')
 
 
 if __name__ == "__main__":
