@@ -14,7 +14,7 @@ class BlacklistChecker:
         self.blacklists = blacklists
         self.blacklist_nameservers : Dict[str, List[str]] = {}
         self.resolver = resolver
-        #self._init_blacklists(blacklists)
+        self._init_blacklists(blacklists)
 
     def _init_blacklists(self, blacklists: Sequence[Blacklist]):
         for bl in blacklists:
@@ -29,6 +29,11 @@ class BlacklistChecker:
         lookup_status = DomainStatus(domain)
 
         for bl in self.blacklists:
+
+            self.resolver.reset_nameservers_to_default()
+            if bl in self.blacklist_nameservers:
+                bl_nameservers = self.blacklist_nameservers[bl.query_zone]
+                self.resolver.add_nameservers(bl_nameservers)
 
             # query the formatted lookup string against blacklist
             lookup_addr = bl.get_lookup_string(domain)
