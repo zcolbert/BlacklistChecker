@@ -1,39 +1,44 @@
 import logging
 
-from typing import Sequence
+from typing import Dict, List, Sequence
 
-from blacklist.blacklist import Blacklist, BlacklistType
+from blacklist.blacklist import Blacklist
 from blacklist.status import DomainStatus
+
+from dnstools import DnsResolver
+from dnstools.domain import Domain
 
 
 class BlacklistChecker:
-    def __init__(self, blacklists: Sequence[Blacklist]):
-        self.blacklists = {}
-        self._init_blacklists(blacklists)
+    def __init__(self, blacklists: Sequence[Blacklist], resolver: DnsResolver):
+        self.blacklists = blacklists
+        self.blacklist_nameservers : Dict[str, List[str]] = {}
+        self.resolver = resolver
+        #self._init_blacklists(blacklists)
 
     def _init_blacklists(self, blacklists: Sequence[Blacklist]):
         for bl in blacklists:
-            if not bl.query_type in self.blacklists:
-                self.blacklists[bl.query_type] = set()
-            self.blacklists[bl.query_type].add(bl)
+            # resolve list of authoritative nameservers for each blacklist
+            nameservers = self.resolver.query_ns_records(bl.query_zone)
+            if nameservers != list():
+                self.blacklist_nameservers[bl.query_zone] = nameservers
 
-    def query(self, hostname, type=BlacklistType.ALL):
+    def query(self, hostname: str):
         logging.info(f'Checking {hostname} ...')
-        status = DomainStatus(hostname)
-        if type == BlacklistType.ALL:
-            self._query_all(status)
-        else:
-            self._query_lists(status, type)
-        status.checked = True
-        return status
+        domain = Domain(hostname)
+        lookup_status = DomainStatus(domain)
 
-    def _query_all(self, status):
-        for bltype in self.blacklists.keys():
-            self._query_lists(status, bltype)
+        for bl in self.blacklists:
 
-    def _query_lists(self, status, type):
-        blists = self.blacklists[type]
-        for bl in blists:
-            listed = bl.query(status.domain)
-            if listed:
-                (status.add_blacklist(bl))
+            # query the formatted lookup string against blacklist
+            lookup_addr = bl.get_lookup_string(domain)
+            result = self.resolver.query_a_records(lookup_addr)
+
+            listed = False
+            if len(result) != 0:
+                listed = True
+
+            # record listing status for this blacklist
+            lookup_status.add_blacklist(bl, listed)
+
+        return lookup_status

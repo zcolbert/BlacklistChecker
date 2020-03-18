@@ -1,11 +1,13 @@
 import dnstools
-import logging
 from enum import Enum
 from dnstools.domain import Domain
 
 
 class BlacklistType(Enum):
     """Enumeration of valid Blacklist types"""
+    # TODO change to standard class to prevent bugs when forgetting to call .value attribute
+    # TODO ex: BlacklistType.ALL != BlacklistType.All.value
+
     ALL = 'all'
     IP_ADDRESS = 'IP Address'
     DOMAIN = 'Domain'
@@ -26,15 +28,9 @@ class Blacklist:
     def query_zone(self) -> str:
         return self._query_zone
 
-    def _get_lookup_string(self, domain) -> str:
+    def get_lookup_string(self, domain) -> str:
         """Return a string used to query the blacklist"""
         pass
-
-    def query(self, domain: Domain):
-        lookup_addr = self._get_lookup_string(domain)
-        result = dnstools.query(lookup_addr, 'A')
-        logging.debug(f'{lookup_addr}\t{result}')
-        return result != []
 
 
 class IPBlacklist(Blacklist):
@@ -46,7 +42,7 @@ class IPBlacklist(Blacklist):
     def __repr__(self):
         return f"IPBlacklist<alias='{self.alias}', query_zone='{self.query_zone}'>"
 
-    def _get_lookup_string(self, domain: Domain) -> str:
+    def get_lookup_string(self, domain: Domain) -> str:
         reversed_ip = dnstools.reverse_ipv4_octets(domain.ipv4_address)
         return f'{reversed_ip}.{self.query_zone}'
 
@@ -60,7 +56,7 @@ class DomainBlacklist(Blacklist):
     def __repr__(self) -> str:
         return f"DomainBlacklist<alias='{self.alias}', query_zone='{self.query_zone}'>"
 
-    def _get_lookup_string(self, domain: Domain):
+    def get_lookup_string(self, domain: Domain):
         return f'{domain.hostname}.{self.query_zone}'
 
 
