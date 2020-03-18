@@ -6,6 +6,35 @@ import socket
 from dnstools.exception import HostError, EmptyHostError
 
 
+class DnsResolver(dns.resolver.Resolver):
+    def __init__(self, filename='/etc/resolv.conf', configure=True):
+        super().__init__(filename, configure)
+
+    def query_authoritative_nameservers(self, hostname: str) -> List[str]:
+        """Resolve authoritative nameserver records from hostname."""
+        if hostname == '':
+            raise EmptyHostError()
+        try:
+            answers = self.query(hostname, 'NS')
+            return [rdata.to_text() for rdata in answers]
+        except dns.resolver.NoAnswer:
+            # no nameservers were found
+            return list()
+
+    def query_a_records(self, hostname: str) -> List[str]:
+        if hostname == '':
+            raise EmptyHostError()
+        try:
+            answers = self.query(hostname, 'A')
+            return [rdata.to_text() for rdata in answers]
+        except (dns.resolver.NXDOMAIN,
+                dns.resolver.NoAnswer,
+                dns.resolver.NoNameservers,
+                dns.resolver.Timeout) as err:
+            # lookup returned no result
+            return list()
+
+
 def query(domain_name: str, record_type: str) -> List[str]:
     try:
         resolver = dns.resolver.Resolver()
